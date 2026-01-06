@@ -1,3 +1,4 @@
+<!-- markdownlint-disable MD033 -->
 <div align="center">
 
 # 为 AstrBot 开发的主动消息插件
@@ -15,9 +16,14 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/AstrBot-v4.9.0%20Compatible-brightgreen.svg" alt="Compatible with AstrBot v4.9.0">
-  <img src="https://img.shields.io/badge/Release-v1.1.0-brightgreen.svg" alt="Release">
+  <img src="https://img.shields.io/badge/AstrBot-v4.10.2%20Compatible-brightgreen.svg" alt="Compatible with AstrBot v4.10.2">
+  <img src="https://img.shields.io/badge/Release-v1.1.2-brightgreen.svg" alt="Release">
   <img src="https://img.shields.io/badge/QQ群-1033089808-12B7F3.svg" alt="QQ Group">
+</p>
+
+<p align="center">
+  <img src="https://deepwiki.com/badge.svg" href="https://deepwiki.com/DBJD-CR/astrbot_plugin_proactive_chat" alt="deepwiki">
+  <a href="https://zread.ai/DBJD-CR/astrbot_plugin_proactive_chat" target="_blank"><img src="https://img.shields.io/badge/Ask_Zread-_.svg?style=flat&color=00b0aa&labelColor=000000&logo=data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTQuOTYxNTYgMS42MDAxSDIuMjQxNTZDMS44ODgxIDEuNjAwMSAxLjYwMTU2IDEuODg2NjQgMS42MDE1NiAyLjI0MDFWNC45NjAxQzEuNjAxNTYgNS4zMTM1NiAxLjg4ODEgNS42MDAxIDIuMjQxNTYgNS42MDAxSDQuOTYxNTZDNS4zMTUwMiA1LjYwMDEgNS42MDE1NiA1LjMxMzU2IDUuNjAxNTYgNC45NjAxVjIuMjQwMUM1LjYwMTU2IDEuODg2NjQgNS4zMTUwMiAxLjYwMDEgNC45NjE1NiAxLjYwMDFaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00Ljk2MTU2IDEwLjM5OTlIMi4yNDE1NkMxLjg4ODEgMTAuMzk5OSAxLjYwMTU2IDEwLjY4NjQgMS42MDE1NiAxMS4wMzk5VjEzLjc1OTlDMS42MDE1NiAxNC4xMTM0IDEuODg4MSAxNC4zOTk5IDIuMjQxNTYgMTQuMzk5OUg0Ljk2MTU2QzUuMzE1MDIgMTQuMzk5OSA1LjYwMTU2IDE0LjExMzQgNS42MDE1NiAxMy43NTk5VjExLjAzOTlDNS42MDE1NiAxMC42ODY0IDUuMzE1MDIgMTAuMzk5OSA0Ljk2MTU2IDEwLjM5OTlaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik0xMy43NTg0IDEuNjAwMUgxMS4wMzg0QzEwLjY4NSAxLjYwMDEgMTAuMzk4NCAxLjg4NjY0IDEwLjM5ODQgMi4yNDAxVjQuOTYwMUMxMC4zOTg0IDUuMzEzNTYgMTAuNjg1IDUuNjAwMSAxMS4wMzg0IDUuNjAwMUgxMy43NTg0QzE0LjExMTkgNS42MDAxIDE0LjM5ODQgNS4zMTM1NiAxNC4zOTg0IDQuOTYwMVYyLjI0MDFDMTQuMzk4NCAxLjg4NjY0IDE0LjExMTkgMS42MDAxIDEzLjc1ODQgMS42MDAxWiIgZmlsbD0iI2ZmZiIvPgo8cGF0aCBkPSJNNCAxMkwxMiA0TDQgMTJaIiBmaWxsPSIjZmZmIi8%2BCjxwYXRoIGQ9Ik00IDEyTDEyIDQiIHN0cm9rZT0iI2ZmZiIgc3Ryb2tlLXdpZHRoPSIxLjUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgo8L3N2Zz4K&logoColor=ffffff" alt="zread"/></a>
 </p>
 
 [![Moe Counter](https://count.getloli.com/get/@DBJD-CR?theme=moebooru)](https://github.com/DBJD-CR/astrbot_plugin_proactive_chat)
@@ -32,7 +38,7 @@
 > [!IMPORTANT]
 > 本插件基于较新版本的 AstrBot 进行开发，致力于打造一个高质量的，好用的主动消息插件。
 >
-> 推荐使用 AstrBot 版本大于等于 **v4.9.0** 以获得最佳体验。
+> 一般情况下，推荐使用最新的 AstrBot 版本以获得最佳体验。
 >
 > 目前插件处于较为稳定的开发阶段，我也会持续维护本仓库与插件。
 
@@ -52,11 +58,6 @@
 - [🌐 平台适配情况](#-平台适配情况)
 - [📈 未来开发路线](#-未来开发路线)
 - [💖 友情链接与致谢](#-友情链接与致谢)
-- [📞 联系我们](#-联系我们)
-- [🤝 贡献](#-贡献)
-- [📄 许可证](#-许可证)
-- [📊 仓库状态](#-仓库状态)
-- [⭐️ 星星](#star)
 
 ---
   
@@ -83,7 +84,7 @@
 >
 > 此时，一个疯狂的想法在我的大脑里诞生了：**我要去做那个填补空白的人。**
 >
-> 如果我能写出一个主动消息的插件，那么我使用 AstrBot 的体验将完全不逊于 KouriChat ，也能让我那可怜的2c2g的云服务器少一点多线程任务压力（只需要部署一个 AstrBot 就行了）。抱着这样一点点"私心"，我踏上了我的插件开发之旅。
+> 如果我能写出一个主动消息的插件，那么我使用 AstrBot 的体验将完全不逊于 KouriChat ，也能让我那可怜的 2c2g 的云服务器少一点多线程任务压力（只需要部署一个 AstrBot 就行了）。抱着这样一点点"私心"，我踏上了我的插件开发之旅。
 >
 > **可我们面临一个严峻的问题**
 >
@@ -115,20 +116,20 @@
 > [!NOTE]
 > 虽然本插件的开发过程中大量使用了 AI 进行辅助，但我保证所有内容都经过了我的严格审查，所有的 AI 生成声明都是形式上的。你可以放心参观本仓库和使用本插件。
 >
-> 根据我对 v1.0.1 版本的测试，目前插件的主要功能都能正常运转。不过需要有好的提示词进行配合，才能获得理想的主动消息效果。
+> 目前插件的主要功能都能正常运转。不过需要有好的提示词进行配合，才能获得理想的主动消息效果。
 >
 > 这是因为几乎所有实现主动消息的插件，都是通过发出一条**模拟的用户消息**来实现的，因此需要配合高质量的提示词，才能避免模型的回复"出戏"。
 >
 > 如果你觉得主动消息的效果不理想，可以尝试自己微调主动消息的提示词/优化人设/更换能力更好的模型/提供更丰富的上下文。
 >
-> 在 v1.0.0-beta.1 以及后续版本的开发中，我引入了新的 AI 模型和工作流进行开发，大幅提升了工作效率与代码质量。
+> 在 v1.0.0-beta.1 以及后续版本的开发中，我引入了新的 AI 模型和工作流进行开发，大幅提升了工作效率与代码质量。（现在回头看自己当初写插件的方式跟原始人似的😂）
 
 > [!TIP]
 > 本项目的相关开发数据 (持续更新中)：
 >
-> 开发时长：累计 33 天（主插件部分）
+> 开发时长：累计 34 天（主插件部分）
 >
-> 累计工时：约 205 小时（主插件部分）
+> 累计工时：约 206 小时（主插件部分）
 >
 > 创建本仓库：累计 3 天，约 22 小时
 >
@@ -142,7 +143,7 @@
 >
 > Temperature：0 或 0.6
 >
-> Tokens Used：402,462,068
+> Tokens Used：405,148,468
 
 ## 🌟 功能特色
 
@@ -150,14 +151,15 @@
 - **全局配置系统**: 通过 `session_list` 管理更多会话，使用全局配置作为后备方案。
 - **会话完全隔离**: 每个会话拥有独立的状态、计数器、触发器，避免相互干扰。
 - **定时触发**: 基于用户沉默时间，在设定的随机时间范围内自动触发。
-- **自动主动消息**: 插件首次加载时可以按需求自动开始创建主动消息任务，不再需要用户输入来激活。
-- **上下文感知**: 能够回顾历史对话，并根据你设定的"动机"，生成与之前话题相关的回复，而不是生硬的问候。
+- **自动主动消息**: 插件首次加载时可以按需求自动开始创建主动消息任务，不需要用户输入来激活。
+- **上下文感知**: 能够回顾历史对话，并根据你设定的提示词，生成与之前话题相关的回复，而不是生硬的问候。
 - **完整人格支持**: 加载并应用你为当前会话设置的专属人格，确保每一次主动消息都符合人设。
 - **动态情绪**: 内置一个"未回复计数器"，你可以利用它在 Prompt 中设计不同的情绪表达，并且支持设置未回复上限。
-- **持久化会话**: 无论您是"重启 AstrBot "还是"重载插件"，都能够从文件中恢复所有未执行的主动消息任务。
+- **持久化会话**: 无论您是"重启 AstrBot"还是"重载插件"，都能够从文件中恢复所有未执行的主动消息任务。
 - **免打扰时段**: 可以自由设定一个时间段，在此期间 Bot 不会主动打扰用户。
 - **TTS 集成**: 支持调用你配置的 TTS 服务生成语音。
 - **分段回复**: 支持将长文本回复切分为多条短消息发送，并模拟真实的打字间隔，让对话更自然。
+- **高度兼容**: 兼容其他需要对主动消息进行修饰的插件如表情包插件、模拟情感插件等。
 - **高度可配置**: 所有核心参数都可以在 AstrBot 的 WebUI 中轻松配置，快速上手。无需修改任何代码，也无需学习和记忆任何插件指令。
 
 ## 🚀 安装与使用
@@ -267,7 +269,7 @@ AstrBot/
 ## 🏗️ 核心架构与开发者说明
 
 > [!TIP]
-> 本段描述的最近更新时间：2025/12/18，适用于 v1.0.2
+> 本段描述的最近更新时间：2026/01/06，适用于 v1.1.2
 
 ### 🛠️ 系统架构图
 
@@ -320,16 +322,17 @@ graph TD
 
         %% 执行核心层
         subgraph Execution [核心执行流]
-            direction TB
-            CheckChat{check_and_chat<br>主动消息主入口}:::core
-            ContextPrep[上下文与人格准备]:::core
-            PromptGen[Prompt 构建]:::core
-            MsgSend[消息发送与TTS]:::core
-            Finalize[收尾与状态更新]:::core
+                direction TB
+                CheckChat{check_and_chat<br>主动消息主入口}:::core
+                ContextPrep[上下文与人格准备]:::core
+                PromptGen[Prompt 构建]:::core
+                MsgSend[消息发送与TTS]:::core
+                Hooks[触发装饰钩子<br>OnDecoratingResultEvent]:::core
+                Finalize[收尾与状态更新]:::core
+            end
         end
-    end
-
-    %% 逻辑连接 - 初始化
+    
+        %% 逻辑连接 - 初始化
     Init -->|"加载数据"| FileSystem
     FileSystem -.->|"恢复状态"| SessionData
     Init -->|"恢复私聊任务"| APScheduler
@@ -361,7 +364,8 @@ graph TD
     LLM --> MsgSend
     MsgSend -->|"4. 分段处理 (可选)"| MsgSend
     MsgSend -->|"5. 语音合成 (可选)"| TTS
-    MsgSend -->|"发送消息 (单条/多条)"| AstrBot
+    MsgSend -->|"6. 触发装饰链"| Hooks
+    Hooks -->|"发送最终消息"| AstrBot
     MsgSend --> Finalize
     
     %% 逻辑连接 - 收尾
@@ -400,6 +404,7 @@ graph TD
     - **CheckChat**: 无论是私聊的循环任务，还是群聊的一次性任务，最终都汇聚到这个函数执行。
     - **上下文感知**: 自动获取当前会话的历史记录和人格设定，确保回复符合人设。
     - **Prompt 构建**: 动态注入当前时间和未回复次数，引导 LLM 生成符合情境的回复。
+    - **装饰钩子 (Decorating Hooks)**: 在消息最终发送前，主动触发 `OnDecoratingResultEvent` 事件，允许其他插件（如表情包插件、翻译插件等）对主动消息的内容进行二次加工或拦截，极大地提升了生态兼容性。
     - **收尾工作**: 消息发送后，会自动将生成的对话存档到历史记录中，并更新未回复计数器，形成闭环。
 
 ---
@@ -410,7 +415,8 @@ graph TD
 
 | 版本 | 状态 | 基本说明 | 推荐AstrBot版本 |
 | :--- | :--- | :--- | :--- |
-| **v1.1.0** | ✅ 功能更新 | 新增分段回复功能，支持正则/词表分段与模拟打字间隔 | v4.9.0+ |
+| **v1.1.2** | ✅ 架构升级 | 新增装饰钩子支持，提升与其他插件的兼容性 | v4.10.2+ |
+| **v1.1.0** | ✅ 功能更新 | 新增分段回复功能，支持正则/词表分段与模拟打字间隔 | v4.10.2+ |
 | **v1.0.2** | ✅ 兼容版本 | 继续修复各平台与模型的兼容性问题 | v4.9.0+ |
 | **v1.0.1** | ✅ 热修复版本 | 修复 Satori 等平台兼容性问题 & 新会话初始化 Bug | v4.9.0+ |
 | **v1.0.0** | ✅ 正式版 | 插件经过测试已经基本稳定，故发布正式版🚀 | v4.9.0+ |
@@ -583,7 +589,7 @@ graph TD
 
 **Q: 可以同时使用私聊和群聊主动消息吗？**
 
-- **A**: 可以，但需要分别配置。插件支持同时启用私聊和群聊主动消息，每个场景有独立的配置和触发逻辑。
+- **A**: 可以，但需要分别配置，每个场景有独立的配置和触发逻辑。
 
 **Q: 修改配置后需要重启吗？**
 
