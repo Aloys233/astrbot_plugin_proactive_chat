@@ -498,7 +498,7 @@ The plugin adopts a hybrid architecture of **Event-Driven + Dual-Mode Scheduling
 > **A**: Currently, all known information indicates that `ApiNotAvailable` is not a bug in the plugin itself, but a connection anomaly between the underlying OneBot adapter and the physical robot (NapCat/Lagrange, etc.).
 > Common causes include: the robot is offline but the platform did not detect it, the heartbeat interval is too long and cut off by the router/firewall, there are zombie/unconnected platform configuration items in the background, or even the browser's power-saving mode affecting the WebSocket page (there are cases with Edge, but it's not the only reason).
 >
-> This problem behaves differently under different AstrBot versions, deployment methods (Windows/Docker), and network environments, and cannot be stably reproduced. It is normal for some users to return to normal after rolling back versions, while others will recur, indicating that environmental factors dominate.
+> This problem behaves differently under different AstrBot versions, deployment methods (Windows/Docker), and network environments, and cannot be stably reproduced. For some users, the issue disappears after rolling back to a previous version, while for others it recurs, indicating that environmental factors dominate.
 > Recommendations for investigation:
 >
 > 1. OneBot client logs, check for frequent Close/Reconnect or offline prompts.
