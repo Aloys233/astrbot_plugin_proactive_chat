@@ -132,9 +132,9 @@
 > [!TIP]
 > Relevant development data of this project (continuously updated):
 >
-> Development duration: accumulated 37 days (main plugin part)
+> Development duration: accumulated 39 days (main plugin part)
 >
-> Cumulative man-hours: about 215 hours (main plugin part)
+> Cumulative man-hours: about 219 hours (main plugin part)
 >
 > Creating this repository: accumulated 3 days, about 22 hours
 >
@@ -148,7 +148,7 @@
 >
 > Temperature: 0 or 0.6
 >
-> Tokens Used: 422,324,753
+> Tokens Used: 431,768,093
 
 ## 🌟 Features
 
