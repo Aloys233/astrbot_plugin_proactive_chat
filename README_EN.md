@@ -12,16 +12,17 @@
 <p align="center">
   <img src="assets/PluginRank.svg" alt="Plugin Rank">
   <img src="assets/StarRank.svg" alt="Star Rank">
+  <img src="assets/ShitMountain.svg" alt="ShitMountain">
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/License-AGPL_3.0-blue.svg" alt="License: AGPL-3.0">
   <img src="https://img.shields.io/badge/Python-3.10+-blue.svg" alt="Python 3.10+">
-  <img src="https://img.shields.io/badge/AstrBot-v4.5.2+-orange.svg" alt="AstrBot v4.5.2+">
+  <img src="https://img.shields.io/badge/AstrBot-v4.8.0+-orange.svg" alt="AstrBot v4.8.0+">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/AstrBot-v4.10.2%20Compatible-brightgreen.svg" alt="Compatible with AstrBot v4.10.2">
+  <img src="https://img.shields.io/badge/AstrBot-v4.16.0%20Compatible-brightgreen.svg" alt="Compatible with AstrBot v4.16.0">
   <img src="https://img.shields.io/github/v/release/DBJD-CR/astrbot_plugin_proactive_chat?label=Release&color=brightgreen" alt="Latest Release">
   <img src="https://img.shields.io/badge/QQ_Group-1033089808-12B7F3.svg" alt="QQ Group">
 </p>
@@ -132,9 +133,9 @@
 > [!TIP]
 > Relevant development data of this project (continuously updated):
 >
-> Development duration: accumulated 39 days (main plugin part)
+> Development duration: accumulated 40 days (main plugin part)
 >
-> Cumulative man-hours: about 219 hours (main plugin part)
+> Cumulative man-hours: about 222 hours (main plugin part)
 >
 > Creating this repository: accumulated 3 days, about 22 hours
 >
@@ -148,7 +149,7 @@
 >
 > Temperature: 0 or 0.6
 >
-> Tokens Used: 431,768,093
+> Tokens Used: 436,768,093
 
 ## 🌟 Features
 
@@ -252,12 +253,17 @@ AstrBot/
 └─ data/
    └─ plugins/
       └─ astrbot_plugin_proactive_chat/
-         ├─ _conf_schema.json
-         ├─ logo.png
-         ├─ main.py
-         ├─ metadata.yaml
-         ├─ README.md
-         └─ requirements.txt
+         ├─ .github/          # GitHub related configurations
+         ├─ assets/           # Static assets
+         ├─ _conf_schema.json # Configuration structure definition
+         ├─ CHANGELOG.md      # Update log, for AstrBot v4.11.2+
+         ├─ CONTRIBUTING.md   # Contribution guidelines
+         ├─ LICENSE           # License file
+         ├─ logo.png          # Plugin Logo, for AstrBot v4.5.0+
+         ├─ main.py           # Main program entry
+         ├─ metadata.yaml     # Plugin metadata
+         ├─ README_EN.md         # Documentation
+         └─ requirements.txt  # Dependency list
 ```
 
 The plugin will create its own data folder under the `AstrBot/data/` directory:
@@ -267,7 +273,9 @@ AstrBot/
 └─ data/
    └─ plugin_data/
       └─ astrbot_plugin_proactive_chat/
-         └─ session_data.json
+         ├─ prompts_collection.md     # Auto-generated prompt summary
+         ├─ session_data.json         # Persistent session data
+         └─ user_config_snapshot.json # User configuration backup
 ```
 
 ---
@@ -275,7 +283,7 @@ AstrBot/
 ## <a id="core"></a>🏗️ Core Architecture and Developer Notes
 
 > [!TIP]
-> Last updated: 2026/01/07, applicable to v1.1.2
+> Last updated: 2026/02/15, applicable to v1.1.5
 
 ### 🛠️ System Architecture Diagram
 
@@ -421,17 +429,11 @@ The plugin adopts a hybrid architecture of **Event-Driven + Dual-Mode Scheduling
 
 | Version | Status | Basic Description | Recommended AstrBot Version |
 | :--- | :--- | :--- | :--- |
+| **v1.1.5** | ✅ Stable Version | Added configuration backup function, preparing for refactoring | v4.10.2+ |
 | **v1.1.2** | ✅ Architecture Upgrade | Added support for decorator hooks, improving compatibility with other plugins | v4.10.2+ |
-| **v1.1.0** | ✅ Feature Update | Added segmented reply function, supporting regex/word list segmentation and simulated typing interval | v4.10.2+ |
-| **v1.0.2** | ✅ Compatible Version | Continued to fix compatibility issues with various platforms and models | v4.9.0+ |
-| **v1.0.1** | ✅ Hotfix Version | Fixed Satori and other platform compatibility issues & new session initialization Bug | v4.9.0+ |
 | **v1.0.0** | ✅ Stable Release | The plugin has been basically stable after testing, so the official version is released 🚀 | v4.9.0+ |
 | **v1.0.0-beta.7** | ✅ Multi-Session Version | 🎉 **Major Update**: Officially added full multi-session support | v4.5.7+ |
 | **v1.0.0-beta.6** | ✅ Stable Version | Further optimized code quality, the last version before multi-session | v4.5.7+ |
-| **v1.0.0-beta.5** | ❌ Failed Version | Attempted to refactor into a modular architecture but failed, moved to other development branches | v4.5.7+ |
-| **v1.0.0-beta.4** | ✅ Stable Version | Fixed race condition issues in potential multi-concurrency scenarios, optimized log filtering | v4.5.7+ |
-| **v1.0.0-beta.3** | ✅ Basic Stable | Hotfix: Fixed the issue that new sessions could not create proactive messages | v4.5.7+ |
-| **v1.0.0-beta.2** | ⚠️ Issues Exist | Added automatic proactive message function, but there are new session initialization issues | v4.5.7+ |
 | **v1.0.0-beta.1** | ⚠️ Re-config Required | Major refactoring of configuration format, **cannot inherit old configuration** | v4.5.7+ |
 | **v0.9.97** | ✅ Stable Version | The last stable version of the single private chat version | v4.5.2+ |
 | **v0.9.9+** | ⚠️ Note Compatibility | Ensure AstrBot version ≥ v4.5.2, otherwise it cannot be imported | v4.5.2+ |
@@ -443,6 +445,8 @@ The plugin adopts a hybrid architecture of **Event-Driven + Dual-Mode Scheduling
 
 > [!IMPORTANT]
 > **v1.0.0-beta.1+ Upgrade Note**: Due to the major refactoring of the configuration format, **old configurations cannot be inherited**, and reconfiguration is required after upgrade. Please be sure to save your custom Prompt settings.
+
+**v1.1.4**: The minimum AstrBot version required to run this version is **v4.8.0+**.
 
 **v1.0.0-beta.2-beta.6**: There is a legacy bug where the automatic trigger timer was not correctly cleaned up, which has been fixed in v1.0.0-beta.7.
 
@@ -661,7 +665,8 @@ Welcome to share your usage experience on any platform!
 - [x] **✅ [Completed] Add Time Perception**: Allow the Bot to correctly perceive the current time when initiating proactive messages.
 - [x] **✅ [Completed] Auto Proactive Message**: Solve the problem that the plugin needs to be manually activated after first load, optimizing user experience.
 - [x] **✅ [Completed] Segmented Reply Function**: Supports splitting long text replies into multiple short messages and simulating real typing intervals.
-- [ ] **🔵 [New Idea] Scheduled Task Reminder**: Use natural language to set a scheduled task and respond in a way that fits the persona.
+~~- [ ] **🔵 [New Idea] Scheduled Task Reminder**: Use natural language to set a scheduled task and respond in a way that fits the persona.~~ (Similar and more powerful features have been added since AstrBot v4.14.0, see [Release-v4.14.0](https://github.com/AstrBotDevs/AstrBot/releases/tag/v4.14.0). Therefore, this plugin will not add this feature repeatedly and it will be maintained by the official AstrBot Team.)
+- [ ] **🟢 [Planned] Modular Refactoring and WebUI**: For details, please refer to the relevant [Issue](https://github.com/DBJD-CR/astrbot_plugin_proactive_chat/issues/21).
 - [ ] **🔵 [New Idea] Additional Proactive Message Tasks**: Add more proactive message prompt slots. To flexibly distinguish scenarios and times, bringing richer proactive message content (can be integrated with the design of `Scheduled Task Reminder`).
 - [ ] **⏳ [Optional] Smarter Trigger Timing**: Introduce the "Flow" concept similar to the [Heartflow](https://github.com/advent259141/Astrbot_plugin_Heartflow) plugin, deciding the trigger timing of proactive messages based on conversation content, rather than just random time.
 - [ ] **⏳ [Optional] RAG Integration**: Introduce Retrieval-Augmented Generation (RAG) technology, allowing the Bot to review longer-term, even cross-month conversation memories, to initiate deeper conversations.

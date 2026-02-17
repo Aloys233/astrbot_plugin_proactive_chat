@@ -1,5 +1,5 @@
 # 文件名: main.py (位于 data/plugins/astrbot_plugin_proactive_chat/ 目录下)
-# 版本: v1.1.0 (分段回复)
+# 版本: v1.1.5
 
 # 导入标准库
 import asyncio
@@ -40,7 +40,7 @@ from astrbot.core.star.star_handler import EventType, star_handlers_registry
 
 # 尝试兼容性导入 MessageSession，用于跨平台发送
 try:
-    from astrbot.core.platform.astr_message_event import MessageSesion as MS
+    from astrbot.core.platform.astr_message_event import MessageSession as MS
 except ImportError:
     from astrbot.core.platform.message_session import MessageSession as MS
 
@@ -214,6 +214,72 @@ class ProactiveChatPlugin(star.Star):
                 if id2 != session_id:
                     await self._cancel_auto_trigger(id2)
 
+    async def _backup_configurations(self):
+        """
+        备份用户配置和提取Prompt，未雨绸缪喵。
+        将所有重要数据持久化到插件数据目录。
+        """
+        try:
+            # 确保数据目录存在
+            await aio_os.makedirs(self.data_dir, exist_ok=True)
+
+            # 1. 备份当前生效的完整配置 (self.config)
+            # 这是用户通过 GUI 或配置文件实际设置的值，是最重要的资产
+            config_backup_file = self.data_dir / "user_config_snapshot.json"
+            async with aiofiles.open(config_backup_file, "w", encoding="utf-8") as f:
+                content = json.dumps(self.config, indent=4, ensure_ascii=False)
+                await f.write(content)
+
+            # 2. 提取并汇总所有 Prompt 到 Markdown 文件，极大提升可读性
+            prompts_content = ["# 🧠 主动消息 Prompt 汇总备份\n"]
+            prompts_content.append(
+                f"> 备份时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            )
+
+            # 提取辅助函数
+            def _extract_prompt(title, settings):
+                prompt = settings.get("proactive_prompt", "")
+                if prompt:
+                    prompts_content.append(f"## {title}\n")
+                    prompts_content.append("```text")
+                    prompts_content.append(prompt)
+                    prompts_content.append("```\n")
+
+            # 私聊全局
+            private_settings = self.config.get("private_settings", {})
+            _extract_prompt("私聊全局 Prompt", private_settings)
+
+            # 群聊全局
+            group_settings = self.config.get("group_settings", {})
+            _extract_prompt("群聊全局 Prompt", group_settings)
+
+            # 私聊个性化
+            private_sessions = self.config.get("private_sessions", {})
+            for key, session in private_sessions.items():
+                if session.get("session_id") and session.get("enable"):
+                    name = session.get("session_name", "未命名")
+                    sid = session.get("session_id")
+                    _extract_prompt(f"私聊会话 {key} ({sid} - {name})", session)
+
+            # 群聊个性化
+            group_sessions = self.config.get("group_sessions", {})
+            for key, session in group_sessions.items():
+                if session.get("session_id") and session.get("enable"):
+                    name = session.get("session_name", "未命名")
+                    sid = session.get("session_id")
+                    _extract_prompt(f"群聊会话 {key} ({sid} - {name})", session)
+
+            prompts_backup_file = self.data_dir / "prompts_collection.md"
+            async with aiofiles.open(prompts_backup_file, "w", encoding="utf-8") as f:
+                await f.write("\n".join(prompts_content))
+
+            logger.info(
+                f"[主动消息] 已将配置快照和 Prompt 汇总备份到数据目录喵: {self.data_dir}"
+            )
+
+        except Exception as e:
+            logger.warning(f"[主动消息] 配置文件备份流程出错喵: {e}")
+
     # --- 数据持久化核心函数 ---
 
     async def _load_data_internal(self):
@@ -273,6 +339,9 @@ class ProactiveChatPlugin(star.Star):
     async def initialize(self):
         """插件的异步初始化函数。"""
         self.data_lock = asyncio.Lock()
+
+        # 备份用户配置和 Prompt，未雨绸缪喵
+        await self._backup_configurations()
 
         # 添加配置验证
         try:
@@ -1932,7 +2001,7 @@ class ProactiveChatPlugin(star.Star):
         try:
             session_obj = MS(platform_name=p_id, message_type=m_type, session_id=t_id)
             await target_platform.send_by_session(session_obj, chain)
-            logger.info(f"[主动消息] 消息将通过平台 {p_id} 送达喵")
+            logger.debug(f"[主动消息] 消息将通过平台 {p_id} 送达喵")
         except Exception as e:
             logger.error(f"[主动消息] 通过平台 {p_id} 发送失败喵: {e}")
             # 记录详细堆栈

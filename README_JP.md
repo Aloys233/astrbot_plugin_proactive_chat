@@ -12,16 +12,17 @@
 <p align="center">
   <img src="assets/PluginRank.svg" alt="Plugin Rank">
   <img src="assets/StarRank.svg" alt="Star Rank">
+  <img src="assets/ShitMountain.svg" alt="ShitMountain">
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/License-AGPL_3.0-blue.svg" alt="License: AGPL-3.0">
   <img src="https://img.shields.io/badge/Python-3.10+-blue.svg" alt="Python 3.10+">
-  <img src="https://img.shields.io/badge/AstrBot-v4.5.2+-orange.svg" alt="AstrBot v4.5.2+">
+  <img src="https://img.shields.io/badge/AstrBot-v4.8.0+-orange.svg" alt="AstrBot v4.8.0+">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/AstrBot-v4.10.2%20Compatible-brightgreen.svg" alt="Compatible with AstrBot v4.10.2">
+  <img src="https://img.shields.io/badge/AstrBot-v4.16.0%20Compatible-brightgreen.svg" alt="Compatible with AstrBot v4.16.0">
   <img src="https://img.shields.io/github/v/release/DBJD-CR/astrbot_plugin_proactive_chat?label=Release&color=brightgreen" alt="Latest Release">
   <img src="https://img.shields.io/badge/QQ_Group-1033089808-12B7F3.svg" alt="QQ Group">
 </p>
@@ -132,9 +133,9 @@
 > [!TIP]
 > 本プロジェクトの関連開発データ (継続更新中)：
 >
-> 開発期間：累計 39 日（メインプラグイン部分）
+> 開発期間：累計 40 日（メインプラグイン部分）
 >
-> 累計工数：約 219 時間（メインプラグイン部分）
+> 累計工数：約 222 時間（メインプラグイン部分）
 >
 > 本リポジトリの作成：累計 3 日、約 22 時間
 >
@@ -148,7 +149,7 @@
 >
 > Temperature：0 または 0.6
 >
-> Tokens Used：431,768,093
+> Tokens Used：436,768,093
 
 ## 🌟 機能・特徴
 
@@ -252,12 +253,17 @@ AstrBot/
 └─ data/
    └─ plugins/
       └─ astrbot_plugin_proactive_chat/
-         ├─ _conf_schema.json
-         ├─ logo.png
-         ├─ main.py
-         ├─ metadata.yaml
-         ├─ README.md
-         └─ requirements.txt
+         ├─ .github/          # GitHub 関連設定
+         ├─ assets/           # 静的リソースファイル
+         ├─ _conf_schema.json # 設定ファイル構造定義
+         ├─ CHANGELOG.md      # プラグイン更新ログ、AstrBot v4.11.2+ に適用
+         ├─ CONTRIBUTING.md   # 貢献ガイドライン
+         ├─ LICENSE           # ライセンスファイル
+         ├─ logo.png          # プラグインロゴ、AstrBot v4.5.0+ に適用
+         ├─ main.py           # プラグインメインプログラムエントリ
+         ├─ metadata.yaml     # プラグインメタデータ
+         ├─ README_JP.md      # 説明ドキュメント
+         └─ requirements.txt  # 依存関係リスト
 ```
 
 プラグインは `AstrBot/data/` ディレクトリ配下に独自のデータフォルダを作成します：
@@ -267,7 +273,9 @@ AstrBot/
 └─ data/
    └─ plugin_data/
       └─ astrbot_plugin_proactive_chat/
-         └─ session_data.json
+         ├─ prompts_collection.md     # 自動生成された Prompt まとめ
+         ├─ session_data.json         # 永続化セッションデータ
+         └─ user_config_snapshot.json # ユーザー設定バックアップ
 ```
 
 ---
@@ -275,7 +283,7 @@ AstrBot/
 ## 🏗️ コアアーキテクチャと開発者向け説明
 
 > [!TIP]
-> このセクションの最終更新日：2026/01/07、v1.1.2 に適用
+> このセクションの最終更新日：2026/02/15、v1.1.5 に適用
 
 ### 🛠️ システムアーキテクチャ図
 
@@ -421,17 +429,12 @@ graph TD
 
 | バージョン | 状態 | 基本説明 | 推奨AstrBotバージョン |
 | :--- | :--- | :--- | :--- |
+| **v1.1.5** | ✅ 安定バージョン | 設定バックアップ機能を追加、リファクタリングの準備 | v4.10.2+ |
 | **v1.1.2** | ✅ アーキテクチャアップグレード | デコレータフックのサポートを追加し、他のプラグインとの互換性を向上 | v4.10.2+ |
 | **v1.1.0** | ✅ 機能更新 | 分割返信機能を追加、正規表現/単語リスト分割と入力間隔シミュレーションをサポート | v4.10.2+ |
-| **v1.0.2** | ✅ 互換バージョン | 各プラットフォームとモデルとの互換性の問題を継続的に修正 | v4.9.0+ |
-| **v1.0.1** | ✅ ホットフィックス | Satori 等のプラットフォーム互換性の問題 & 新規セッション初期化 Bug を修正 | v4.9.0+ |
 | **v1.0.0** | ✅ 正式版 | プラグインはテストを経て基本的に安定したため、正式版をリリース🚀 | v4.9.0+ |
 | **v1.0.0-beta.7** | ✅ マルチセッション版 | 🎉 **重要更新**: 完全なマルチセッションサポートを正式に追加 | v4.5.7+ |
 | **v1.0.0-beta.6** | ✅ 安定バージョン | コード品質をさらに最適化、マルチセッション前の最後のバージョン | v4.5.7+ |
-| **v1.0.0-beta.5** | ❌ 失敗バージョン | モジュール化アーキテクチャへのリファクタリングを試みたが失敗、他の開発ブランチへ移動 | v4.5.7+ |
-| **v1.0.0-beta.4** | ✅ 安定バージョン | 潜在的な多重並行シナリオ下での競合状態の問題を修正、ログフィルタリングを最適化 | v4.5.7+ |
-| **v1.0.0-beta.3** | ✅ 基本的安定 | ホットフィックス: 新規セッションが能動的メッセージを作成できない問題を修正 | v4.5.7+ |
-| **v1.0.0-beta.2** | ⚠️ 問題あり | 自動能動的メッセージ機能を追加したが、新規セッション初期化の問題が存在 | v4.5.7+ |
 | **v1.0.0-beta.1** | ⚠️ 要再設定 | 設定フォーマットの大幅なリファクタリング、**旧設定を継承不可** | v4.5.7+ |
 | **v0.9.97** | ✅ 安定バージョン | シングル個人チャット版最後の安定バージョン | v4.5.2+ |
 | **v0.9.9+** | ⚠️ 互換性注意 | AstrBot バージョン ≥ v4.5.2 を確認してください。そうでない場合インポートできません | v4.5.2+ |
@@ -443,6 +446,8 @@ graph TD
 
 > [!IMPORTANT]
 > **v1.0.0-beta.1+ アップグレード注意**：設定フォーマットの大幅なリファクタリングにより、**旧設定を継承できません**。アップグレード後は再設定が必要です。カスタム Prompt 設定を必ず保存してください。
+
+**v1.1.4**: このバージョンを実行するための AstrBot の最低バージョン要件は **v4.8.0+** です。
 
 **v1.0.0-beta.2-beta.6**：自動トリガータイマーが正しくクリーンアップされないという残存バグがありましたが、v1.0.0-beta.7 で修正されました。
 
@@ -661,7 +666,8 @@ AstrBot 公式のプラグイン開発ドキュメントによると、能動的
 - [x] **✅ [完了] 時間認識能力の追加**: Bot が能動的メッセージを開始する際にも現在時刻を正しく認識できるようにします。
 - [x] **✅ [完了] 自動能動的メッセージ**: プラグイン初回ロード後に手動でアクティブ化する必要がある問題を解決し、ユーザー体験を最適化します。
 - [x] **✅ [完了] 分割返信機能**: 長文の返信を複数の短いメッセージに分割して送信し、実際の入力間隔をシミュレートすることをサポートします。
-- [ ] **🔵 [新しいアイデア] 定期タスクリマインダー**: 自然言語で定期タスクを設定し、ペルソナに合った応答ができるようにします。
+~~- [ ] **🔵 [新しいアイデア] 定期タスクリマインダー**: 自然言語で定期タスクを設定し、ペルソナに合った応答ができるようにします。~~ (AstrBot v4.14.0 バージョンから、より強力な類似機能が追加されました。詳細は [Release-v4.14.0](https://github.com/AstrBotDevs/AstrBot/releases/tag/v4.14.0) をご覧ください。そのため、本プラグインではこの機能を重複して追加せず、公式のメンテナンスに委ねます)
+- [ ] **🟢 [計画中] モジュール化リファクタリングと WebUI**: 詳細は関連する [Issue](https://github.com/DBJD-CR/astrbot_plugin_proactive_chat/issues/21) を参照してください。
 - [ ] **🔵 [新しいアイデア] 追加の能動的メッセージタスク**: より多くの能動的メッセージプロンプトスロットを増設します。シナリオと時間を柔軟に区別し、より豊富な能動的メッセージコンテンツをもたらします（`定期タスクリマインダー`の設計と融合可能）。
 - [ ] **⏳ [オプション] よりスマートなトリガータイミング**: [Heartflow](https://github.com/advent259141/Astrbot_plugin_Heartflow) プラグインのような「フロー」の概念を導入し、ランダムな時間だけでなく、会話内容に基づいて能動的メッセージのトリガータイミングを判断します。
 - [ ] **⏳ [オプション] RAG 統合**: 検索拡張生成（RAG）技術を導入し、Bot がより長期的、さらには月をまたぐ会話の記憶を振り返り、より深みのある会話を開始できるようにします。
