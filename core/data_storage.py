@@ -8,6 +8,7 @@ from typing import Any
 
 import aiofiles
 import aiofiles.os as aio_os
+
 from astrbot.api import logger
 
 
@@ -29,9 +30,12 @@ class StorageMixin:
                 # 异步读取 JSON 内容
                 async with aiofiles.open(self.session_data_file, encoding="utf-8") as f:
                     content = await f.read()
+                    # JSON 解析放到线程池，避免阻塞主事件循环
                     self.session_data = await asyncio.to_thread(json.loads, content)
             except (OSError, json.JSONDecodeError) as e:
-                logger.error(f"[主动消息] 加载会话数据失败喵: {e}，将使用空数据启动喵。")
+                logger.error(
+                    f"[主动消息] 加载会话数据失败喵: {e}，将使用空数据启动喵。"
+                )
                 self.session_data = {}
         else:
             # 文件不存在则启动空数据
@@ -45,7 +49,9 @@ class StorageMixin:
             # 确保目录存在
             await aio_os.makedirs(self.data_dir, exist_ok=True)
             # 写入 JSON（避免阻塞事件循环）
-            async with aiofiles.open(self.session_data_file, "w", encoding="utf-8") as f:
+            async with aiofiles.open(
+                self.session_data_file, "w", encoding="utf-8"
+            ) as f:
                 content_to_write = await asyncio.to_thread(
                     json.dumps, self.session_data, indent=4, ensure_ascii=False
                 )
@@ -55,8 +61,14 @@ class StorageMixin:
 
     def _merge_session_info(self, base: dict, incoming: dict) -> dict:
         """合并两份会话数据，避免重复任务与计数错乱。"""
+        # 先以 base 为主，再按字段规则吸收 incoming
         merged = base.copy()
-        for key in ["self_id", "last_message_time", "unanswered_count", "next_trigger_time"]:
+        for key in [
+            "self_id",
+            "last_message_time",
+            "unanswered_count",
+            "next_trigger_time",
+        ]:
             if key not in incoming:
                 continue
             if key not in merged:
@@ -80,6 +92,7 @@ class StorageMixin:
         normalized_data: dict[str, dict] = {}
         changed = False
 
+        # 遍历副本，允许在后续阶段安全替换原字典
         for session_id, payload in list(self.session_data.items()):
             normalized_id = self._normalize_session_id(session_id)
             if normalized_id != session_id:
@@ -88,14 +101,18 @@ class StorageMixin:
                     f"[主动消息] 规范化会话键: {self._get_session_log_str(session_id)} -> {normalized_id}"
                 )
 
+            # 命中同一规范化键时执行合并，避免重复会话条目
             existing = normalized_data.get(normalized_id)
             if existing:
-                normalized_data[normalized_id] = self._merge_session_info(existing, payload)
+                normalized_data[normalized_id] = self._merge_session_info(
+                    existing, payload
+                )
                 changed = True
             else:
                 normalized_data[normalized_id] = payload
 
         if changed:
+            # 仅在检测到变化时回写，避免无意义对象替换
             self.session_data = normalized_data
 
         return changed

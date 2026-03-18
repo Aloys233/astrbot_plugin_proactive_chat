@@ -56,17 +56,22 @@ class LlmMixin:
         """准备 LLM 请求所需的上下文、人格和最终 Prompt。"""
         try:
             # 获取当前会话的对话 ID
+            # 候选列表：优先原始 session_id，再尝试规范化 ID
             candidate_session_ids = [session_id]
             try:
                 normalized_session_id = self._normalize_session_id(session_id)
             except Exception:
                 normalized_session_id = session_id
 
-            if normalized_session_id and normalized_session_id not in candidate_session_ids:
+            if (
+                normalized_session_id
+                and normalized_session_id not in candidate_session_ids
+            ):
                 candidate_session_ids.append(normalized_session_id)
 
             conv_id = None
             effective_session_id = session_id
+            # 依次尝试候选会话，命中即停止
             for candidate in candidate_session_ids:
                 conv_id = (
                     await self.context.conversation_manager.get_curr_conversation_id(
@@ -98,7 +103,7 @@ class LlmMixin:
                 )
                 return None
 
-            # 拉取对话历史
+            # 拉取对话历史（可能是字符串化 JSON，也可能是对象列表）
             conversation = await self.context.conversation_manager.get_conversation(
                 effective_session_id, conv_id
             )
@@ -115,7 +120,7 @@ class LlmMixin:
                 except (json.JSONDecodeError, TypeError):
                     logger.warning("[主动消息] 解析历史记录失败，使用空历史喵。")
 
-            # 获取人格设定（优先会话 persona）
+            # 获取人格设定：优先会话 persona，再回退默认 persona
             original_system_prompt = ""
             if conversation and conversation.persona_id:
                 persona = await self.context.persona_manager.get_persona(
@@ -138,7 +143,9 @@ class LlmMixin:
                     logger.info("[主动消息] 使用默认人格设定喵")
 
             if not original_system_prompt:
-                logger.error("[主动消息] 呜喵？！关键错误喵：无法加载任何人格设定，放弃喵。")
+                logger.error(
+                    "[主动消息] 呜喵？！关键错误喵：无法加载任何人格设定，放弃喵。"
+                )
                 return None
 
             logger.info(
@@ -175,7 +182,7 @@ class LlmMixin:
 
         llm_response_obj = None
         try:
-            # 优先使用新版统一 LLM 接口
+            # 优先使用新版统一 LLM 接口（支持 provider_id + contexts）
             provider_id = await self.context.get_current_chat_provider_id(session_id)
             history_messages = self._sanitize_history_content(history_messages)
             llm_response_obj = await self.context.llm_generate(
@@ -190,7 +197,7 @@ class LlmMixin:
             logger.info(f"[主动消息] 错误类型喵: {type(llm_error).__name__}")
             logger.info(f"[主动消息] 错误详情喵: {str(llm_error)}")
 
-            # 回退到旧接口
+            # 回退到旧接口（兼容历史 Provider 实现）
             try:
                 provider = self.context.get_using_provider(umo=session_id)
                 if provider:
@@ -211,6 +218,7 @@ class LlmMixin:
                 logger.error("[主动消息] 呜喵？！LLM调用完全失败，将重新调度任务喵。")
                 return None, final_user_simulation_prompt
 
+        # 仅在确实拿到 completion_text 时视为成功
         if llm_response_obj and llm_response_obj.completion_text:
             response_text = llm_response_obj.completion_text.strip()
             if response_text == "[object Object]":

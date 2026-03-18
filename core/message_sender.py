@@ -17,6 +17,11 @@ from astrbot.core.platform.platform import PlatformStatus
 from astrbot.core.star.star_handler import EventType, star_handlers_registry
 
 try:
+    from astrbot.api.event import AstrMessageEvent as AstrBotMessageEvent
+except ImportError:
+    AstrBotMessageEvent = None
+
+try:
     from astrbot.core.platform.astr_message_event import MessageSession as MS
 except ImportError:
     from astrbot.core.platform.message_session import MessageSession as MS
@@ -33,6 +38,7 @@ class SenderMixin:
         split_mode = settings.get("split_mode", "regex")
 
         # 分段词列表模式
+        # 模式1：按分段词拆分（如句号、问号）
         if split_mode == "words":
             split_words = settings.get("split_words", ["。", "？", "！", "~", "…"])
             if not split_words:
@@ -41,6 +47,7 @@ class SenderMixin:
             escaped_words = sorted(
                 [re.escape(word) for word in split_words], key=len, reverse=True
             )
+            # 保留分隔符，避免语气符号在切分时丢失
             pattern = re.compile(f"(.*?({'|'.join(escaped_words)})|.+$)", re.DOTALL)
 
             segments = pattern.findall(text)
@@ -59,9 +66,7 @@ class SenderMixin:
         # 正则分段模式
         regex_pattern = settings.get("regex", r".*?[。？！~…\n]+|.+$")
         try:
-            split_response = re.findall(
-                regex_pattern, text, re.DOTALL | re.MULTILINE
-            )
+            split_response = re.findall(regex_pattern, text, re.DOTALL | re.MULTILINE)
         except re.error:
             logger.error(
                 f"[主动消息] 分段回复正则表达式错误，使用默认分段方式: {traceback.format_exc()}"
@@ -102,6 +107,7 @@ class SenderMixin:
         if not parsed:
             return chain
 
+        # 解析出平台、消息类型、目标 ID，用于构造事件上下文
         platform_name, msg_type_str, target_id = parsed
         platform_inst = None
         for p in self.context.platform_manager.platform_insts:
@@ -109,6 +115,7 @@ class SenderMixin:
                 platform_inst = p
                 break
 
+        # 兼容按平台显示名匹配（部分平台可能用 name 进行标识）
         if not platform_inst:
             for p in self.context.platform_manager.platform_insts:
                 if p.meta().name == platform_name:
@@ -128,22 +135,18 @@ class SenderMixin:
         else:
             message_obj.type = MessageType.FRIEND_MESSAGE
 
+        # 构造最小可用消息对象，让装饰器可在统一事件结构上改写链
         message_obj.session_id = target_id
         message_obj.message = chain
-        message_obj.self_id = self.session_data.get(session_id, {}).get("self_id", "bot")
+        message_obj.self_id = self.session_data.get(session_id, {}).get(
+            "self_id", "bot"
+        )
         message_obj.sender = MessageMember(user_id=target_id)
         message_obj.message_str = ""
         message_obj.raw_message = None
         message_obj.message_id = ""
 
-        event = AstrBotMessageEvent = None
-        try:
-            from astrbot.api.event import AstrMessageEvent
-
-            AstrBotMessageEvent = AstrMessageEvent
-        except Exception:
-            AstrBotMessageEvent = None
-
+        # 旧版本若无事件类则跳过装饰阶段，直接返回原链
         if not AstrBotMessageEvent:
             return chain
 
@@ -159,6 +162,7 @@ class SenderMixin:
         res.chain = chain
         event.set_result(res)
 
+        # 顺序执行所有 OnDecoratingResultEvent 处理器
         handlers = star_handlers_registry.get_handlers_by_event_type(
             EventType.OnDecoratingResultEvent
         )
@@ -186,10 +190,13 @@ class SenderMixin:
 
     async def _send_chain_with_hooks(self, session_id: str, components: list) -> None:
         """发送消息链（含装饰钩子）。"""
-        processed_chain_list = await self._trigger_decorating_hooks(session_id, components)
+        processed_chain_list = await self._trigger_decorating_hooks(
+            session_id, components
+        )
         if not processed_chain_list:
             return
 
+        # 将处理后的组件列表封装为统一消息链对象
         chain = MessageChain(processed_chain_list)
         parsed = self._parse_session_id(session_id)
         if not parsed:
@@ -204,7 +211,7 @@ class SenderMixin:
             else MessageType.FRIEND_MESSAGE
         )
 
-        # 精确匹配平台实例
+        # 精确匹配平台实例：避免将消息发往错误平台
         platforms = self.context.platform_manager.get_insts()
         target_platform = next((p for p in platforms if p.meta().id == p_id), None)
 
@@ -243,7 +250,7 @@ class SenderMixin:
         tts_conf = session_config.get("tts_settings", {})
         seg_conf = session_config.get("segmented_reply_settings", {})
 
-        # 先尝试 TTS
+        # 先尝试 TTS：成功后是否继续发文本由 always_send_text 控制
         is_tts_sent = False
         if tts_conf.get("enable_tts", True):
             try:
@@ -260,7 +267,7 @@ class SenderMixin:
             except Exception as e:
                 logger.error(f"[主动消息] 手动TTS流程发生异常喵: {e}")
 
-        # 是否继续发送文本
+        # 是否继续发送文本：未发出 TTS 或配置要求始终发文本
         should_send_text = not is_tts_sent or tts_conf.get("always_send_text", True)
 
         if should_send_text:
@@ -277,6 +284,7 @@ class SenderMixin:
                     f"[主动消息] 分段回复已启用，将发送 {len(segments)} 条消息喵。"
                 )
 
+                # 分段顺序发送，段间按策略等待，模拟自然输出节奏
                 for idx, seg in enumerate(segments):
                     await self._send_chain_with_hooks(session_id, [Plain(text=seg)])
                     if idx < len(segments) - 1:

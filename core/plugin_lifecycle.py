@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import asyncio
-import time
 import zoneinfo
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from astrbot.api import logger
+
 import astrbot.api.star as star
+from astrbot.api import logger
 
 
 class LifecycleMixin:
@@ -42,17 +42,20 @@ class LifecycleMixin:
         # 加载持久化数据
         async with self.data_lock:
             await self._load_data_internal()
+            # 启动时先做会话键规范化，避免历史数据中的多键并存
             normalized = self._normalize_session_data()
             if normalized:
+                # 仅在发生规范化变更时回写，减少无效 IO
                 await self._save_data_internal()
         logger.info("[主动消息] 已成功从文件加载会话数据喵。")
 
-        # 恢复插件启动后的消息时间
+        # 恢复插件启动后的消息时间（用于自动触发判定）
         restored_count = 0
         for session_id, session_info in self.session_data.items():
             if isinstance(session_info, dict) and "last_message_time" in session_info:
                 last_time = session_info["last_message_time"]
                 if isinstance(last_time, (int, float)) and last_time > 0:
+                    # 仅恢复“本次启动后”的消息时间，避免历史消息误触发逻辑
                     if last_time >= self.plugin_start_time:
                         self.last_message_times[session_id] = last_time
                         restored_count += 1
@@ -69,7 +72,7 @@ class LifecycleMixin:
                 f"[主动消息] 已从持久化数据恢复 {restored_count} 个会话在插件启动后的消息时间喵。"
             )
 
-        # 读取时区设置
+        # 读取时区设置（失败时回退系统时区）
         try:
             self.timezone = zoneinfo.ZoneInfo(self.context.get_config().get("timezone"))
         except (zoneinfo.ZoneInfoNotFoundError, TypeError, KeyError, ValueError) as e:
@@ -82,6 +85,7 @@ class LifecycleMixin:
         self.scheduler = AsyncIOScheduler(timezone=self.timezone)
         self.scheduler.start()
 
+        # 先恢复持久化任务，再初始化自动触发器，避免重复调度
         await self._init_jobs_from_data()
         logger.info("[主动消息] 调度器已初始化喵。")
 
@@ -104,7 +108,9 @@ class LifecycleMixin:
                     logger.warning(f"[主动消息] 取消计时器时出错喵: {e}")
 
             self.group_timers.clear()
-            logger.info(f"[主动消息] 已取消 {timer_count} 个正在运行的群聊沉默计时器喵。")
+            logger.info(
+                f"[主动消息] 已取消 {timer_count} 个正在运行的群聊沉默计时器喵。"
+            )
 
             # 取消自动触发计时器
             auto_trigger_count = len(self.auto_trigger_timers)
@@ -120,7 +126,7 @@ class LifecycleMixin:
             self.auto_trigger_timers.clear()
             logger.info(f"[主动消息] 已取消 {auto_trigger_count} 个自动触发计时器喵。")
 
-            # 清理调度器任务
+            # 清理调度器任务（逐个移除后再 shutdown，便于日志定位）
             if self.scheduler and self.scheduler.running:
                 try:
                     jobs = self.scheduler.get_jobs()
@@ -137,7 +143,7 @@ class LifecycleMixin:
                 except Exception as e:
                     logger.error(f"[主动消息] 关闭调度器时出错喵: {e}")
 
-            # 保存持久化数据
+            # 终止前最后一次持久化，尽量保留当前会话状态
             if self.data_lock:
                 try:
                     async with self.data_lock:

@@ -38,7 +38,9 @@ class SchedulerMixin:
             )
             return
 
-        auto_trigger_minutes = auto_trigger_settings.get("auto_trigger_after_minutes", 5)
+        auto_trigger_minutes = auto_trigger_settings.get(
+            "auto_trigger_after_minutes", 5
+        )
         if auto_trigger_minutes <= 0:
             logger.debug(
                 f"[主动消息] {self._get_session_log_str(session_id, session_config)} 的自动触发时间设置为0，禁用自动触发喵。"
@@ -57,6 +59,7 @@ class SchedulerMixin:
             finally:
                 del self.auto_trigger_timers[session_id]
 
+        # 闭包回调：到达延迟后检查是否需要创建一次主动任务
         def _auto_trigger_callback(captured_session_id=session_id):
             try:
                 # 计时器已被取消则直接跳过
@@ -79,19 +82,24 @@ class SchedulerMixin:
                 current_time = time.time()
                 time_since_plugin_start = current_time - self.plugin_start_time
 
+                # 仅“启动后始终无人发言”的会话满足自动触发条件
                 if last_message_time == 0 and time_since_plugin_start >= (
                     auto_trigger_minutes * 60
                 ):
                     try:
                         schedule_conf = current_config.get("schedule_settings", {})
-                        min_interval = int(schedule_conf.get("min_interval_minutes", 30)) * 60
+                        min_interval = (
+                            int(schedule_conf.get("min_interval_minutes", 30)) * 60
+                        )
                         max_interval = max(
                             min_interval,
                             int(schedule_conf.get("max_interval_minutes", 900)) * 60,
                         )
                         random_interval = random.randint(min_interval, max_interval)
                         next_trigger_time = time.time() + random_interval
-                        run_date = datetime.fromtimestamp(next_trigger_time, tz=self.timezone)
+                        run_date = datetime.fromtimestamp(
+                            next_trigger_time, tz=self.timezone
+                        )
 
                         # 自动触发任务不写入持久化数据
                         self.scheduler.add_job(
@@ -189,16 +197,22 @@ class SchedulerMixin:
             if not existing_parsed:
                 continue
             _, existing_type, existing_target = existing_parsed
-            if self._is_friend_type(existing_type) == is_friend and existing_target == target_id:
+            if (
+                self._is_friend_type(existing_type) == is_friend
+                and existing_target == target_id
+            ):
                 next_trigger = session_info.get("next_trigger_time")
                 if next_trigger:
+                    # 与恢复逻辑一致：给予 60 秒宽限，避免边界抖动
                     trigger_time_with_grace = next_trigger + 60
                     if current_time < trigger_time_with_grace:
                         return True
 
         return False
 
-    def _resolve_session_id_for_config(self, session_id: str, session_config: dict) -> str:
+    def _resolve_session_id_for_config(
+        self, session_id: str, session_config: dict
+    ) -> str:
         """将配置中的会话标识解析为完整 UMO。"""
         parsed = self._parse_session_id(session_id)
         if parsed:
@@ -293,7 +307,10 @@ class SchedulerMixin:
             # 未命中 session_list 或被禁用，都视为无效会话
             return "invalid"
 
-        resolved_session_id = self._resolve_session_id_for_config(session_id, session_config)
+        # 将配置项中的会话标识补全为可发送的完整 UMO
+        resolved_session_id = self._resolve_session_id_for_config(
+            session_id, session_config
+        )
 
         auto_trigger_settings = session_config.get("auto_trigger_settings", {})
         if not auto_trigger_settings.get("enable_auto_trigger", False):
@@ -313,7 +330,9 @@ class SchedulerMixin:
         logger.debug(
             f"[主动消息] 正在为 {self._get_session_log_str(resolved_session_id)} 设置自动触发器喵。"
         )
-        auto_trigger_minutes = auto_trigger_settings.get("auto_trigger_after_minutes", 5)
+        auto_trigger_minutes = auto_trigger_settings.get(
+            "auto_trigger_after_minutes", 5
+        )
         logger.info(
             f"[主动消息] 已为 {self._get_session_log_str(resolved_session_id)} 设置自动触发器喵，"
             f"将在 {auto_trigger_minutes} 分钟后检查是否需要自动触发喵。"
@@ -345,6 +364,7 @@ class SchedulerMixin:
             if not session_config or not session_config.get("enable", False):
                 continue
 
+            # 仅恢复存在 next_trigger_time 的持久化任务
             next_trigger = session_info.get("next_trigger_time")
             if next_trigger:
                 trigger_time_with_grace = next_trigger + 60
@@ -352,7 +372,9 @@ class SchedulerMixin:
 
                 if is_not_expired:
                     try:
-                        run_date = datetime.fromtimestamp(next_trigger, tz=self.timezone)
+                        run_date = datetime.fromtimestamp(
+                            next_trigger, tz=self.timezone
+                        )
                         existing_job = self.scheduler.get_job(session_id)
                         if existing_job:
                             logger.debug(
@@ -361,19 +383,26 @@ class SchedulerMixin:
                             continue
 
                         # 恢复前校验时间间隔：若偏离当前配置区间过大，视为旧任务
-                        min_interval = int(
-                            session_config.get("schedule_settings", {}).get(
-                                "min_interval_minutes", 30
+                        min_interval = (
+                            int(
+                                session_config.get("schedule_settings", {}).get(
+                                    "min_interval_minutes", 30
+                                )
                             )
-                        ) * 60
-                        max_interval = int(
-                            session_config.get("schedule_settings", {}).get(
-                                "max_interval_minutes", 900
+                            * 60
+                        )
+                        max_interval = (
+                            int(
+                                session_config.get("schedule_settings", {}).get(
+                                    "max_interval_minutes", 900
+                                )
                             )
-                        ) * 60
+                            * 60
+                        )
                         if min_interval > max_interval:
                             max_interval = min_interval
 
+                        # delta 为“剩余触发秒数”，用于与当前配置区间比对
                         delta = next_trigger - current_time
                         if delta < min_interval or delta > max_interval:
                             logger.info(
@@ -420,7 +449,9 @@ class SchedulerMixin:
         if restored_count == 0:
             logger.info("[主动消息] 没有需要恢复的定时任务喵。")
 
-    async def _schedule_next_chat_and_save(self, session_id: str, reset_counter: bool = False) -> None:
+    async def _schedule_next_chat_and_save(
+        self, session_id: str, reset_counter: bool = False
+    ) -> None:
         """安排下一次主动聊天并立即将状态持久化到文件。"""
         normalized_session_id = self._normalize_session_id(session_id)
         session_config = self._get_session_config(normalized_session_id)
@@ -433,7 +464,9 @@ class SchedulerMixin:
             # 如果存在非规范化的旧键，迁移到规范化键
             if normalized_session_id != session_id and session_id in self.session_data:
                 existing_payload = self.session_data.get(session_id, {})
-                self.session_data.setdefault(normalized_session_id, {}).update(existing_payload)
+                self.session_data.setdefault(normalized_session_id, {}).update(
+                    existing_payload
+                )
                 del self.session_data[session_id]
 
             # 清理可能残留的旧任务（旧键）
@@ -445,7 +478,9 @@ class SchedulerMixin:
 
             # 用户回复时重置计数器
             if reset_counter:
-                self.session_data.setdefault(normalized_session_id, {})["unanswered_count"] = 0
+                self.session_data.setdefault(normalized_session_id, {})[
+                    "unanswered_count"
+                ] = 0
 
             # 计算随机触发时间
             min_interval = int(schedule_conf.get("min_interval_minutes", 30)) * 60
@@ -457,6 +492,7 @@ class SchedulerMixin:
             run_date = datetime.fromtimestamp(next_trigger_time, tz=self.timezone)
 
             # 更新调度器与持久化数据
+            # 先清理同目标历史任务，再写入新任务，确保同一目标仅一条生效
             self._purge_related_jobs(normalized_session_id)
             self.scheduler.add_job(
                 self.check_and_chat,
@@ -468,9 +504,9 @@ class SchedulerMixin:
                 misfire_grace_time=60,
             )
 
-            self.session_data.setdefault(normalized_session_id, {})["next_trigger_time"] = (
-                next_trigger_time
-            )
+            self.session_data.setdefault(normalized_session_id, {})[
+                "next_trigger_time"
+            ] = next_trigger_time
             logger.info(
                 f"[主动消息] 已为 {self._get_session_log_str(normalized_session_id, session_config)} 安排下一次主动消息喵，时间：{run_date.strftime('%Y-%m-%d %H:%M:%S')} 喵。"
             )
@@ -498,6 +534,7 @@ class SchedulerMixin:
 
         idle_minutes = session_config.get("group_idle_trigger_minutes", 10)
 
+        # 群聊沉默回调：达到 idle_minutes 后尝试安排下一次主动消息
         def _schedule_callback(captured_session_id=normalized_session_id):
             try:
                 # 若计时器已被重置则跳过

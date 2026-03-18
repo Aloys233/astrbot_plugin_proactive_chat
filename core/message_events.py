@@ -26,6 +26,7 @@ class EventsMixin:
             return
 
         session_id = event.unified_msg_origin
+        # 统一会话键，避免跨平台前缀变化导致状态分裂
         normalized_session_id = self._normalize_session_id(session_id)
 
         # 缓存 self_id，便于装饰钩子构造事件
@@ -41,17 +42,20 @@ class EventsMixin:
 
         async with self.data_lock:
             # 合并旧键数据
+            # 将旧键数据迁移到规范化键，保持计数与 self_id 连续
             if normalized_session_id != session_id and session_id in self.session_data:
                 existing_payload = self.session_data.get(session_id, {})
-                self.session_data.setdefault(normalized_session_id, {}).update(existing_payload)
+                self.session_data.setdefault(normalized_session_id, {}).update(
+                    existing_payload
+                )
                 del self.session_data[session_id]
 
             if current_time >= self.plugin_start_time:
-                self.session_data.setdefault(normalized_session_id, {})["last_message_time"] = (
-                    current_time
-                )
+                self.session_data.setdefault(normalized_session_id, {})[
+                    "last_message_time"
+                ] = current_time
 
-        # 取消自动触发
+        # 取消自动触发：同时处理原键与规范化键，避免漏取消
         await self._cancel_all_related_auto_triggers(session_id)
         if normalized_session_id != session_id:
             await self._cancel_all_related_auto_triggers(normalized_session_id)
@@ -99,7 +103,9 @@ class EventsMixin:
         logger.info(
             f"[主动消息] 重置 {self._get_session_log_str(normalized_session_id, session_config)} 的未回复计数器为0喵。"
         )
-        await self._schedule_next_chat_and_save(normalized_session_id, reset_counter=True)
+        await self._schedule_next_chat_and_save(
+            normalized_session_id, reset_counter=True
+        )
 
     @filter.event_message_type(filter.EventMessageType.GROUP_MESSAGE, priority=998)
     async def on_group_message(self, event: AstrMessageEvent):
@@ -117,7 +123,7 @@ class EventsMixin:
                     event.get_self_id()
                 )
 
-        # 过滤 Bot 自身消息，避免误重置计数器
+        # 过滤 Bot 自身消息，避免把机器人发言误判成“用户活跃”
         sender_id = None
         try:
             if hasattr(event, "message_obj") and event.message_obj:
@@ -142,8 +148,11 @@ class EventsMixin:
             )
             return
 
+        # 记录群聊最近用户活跃时间（用于临时态超时清理）
         current_time = time.time()
-        self.session_temp_state[normalized_session_id] = {"last_user_time": current_time}
+        self.session_temp_state[normalized_session_id] = {
+            "last_user_time": current_time
+        }
         logger.debug(
             f"[主动消息] 记录 {self._get_session_log_str(session_id)} 的消息时间戳喵: {current_time}"
         )
@@ -154,13 +163,15 @@ class EventsMixin:
         async with self.data_lock:
             if normalized_session_id != session_id and session_id in self.session_data:
                 existing_payload = self.session_data.get(session_id, {})
-                self.session_data.setdefault(normalized_session_id, {}).update(existing_payload)
+                self.session_data.setdefault(normalized_session_id, {}).update(
+                    existing_payload
+                )
                 del self.session_data[session_id]
 
             if current_time >= self.plugin_start_time:
-                self.session_data.setdefault(normalized_session_id, {})["last_message_time"] = (
-                    current_time
-                )
+                self.session_data.setdefault(normalized_session_id, {})[
+                    "last_message_time"
+                ] = current_time
                 logger.debug(
                     f"[主动消息] 已记录插件启动后 {self._get_session_log_str(session_id)} 的消息时间喵 -> {current_time}"
                 )
@@ -191,7 +202,7 @@ class EventsMixin:
             )
             return
 
-        # 取消群聊中的既有调度任务
+        # 取消群聊中的既有调度任务（含“已持久化但未入调度器”的兜底判断）
         had_scheduled_task = False
         if self.scheduler.get_job(normalized_session_id):
             had_scheduled_task = True
@@ -233,7 +244,7 @@ class EventsMixin:
         # 重置沉默倒计时
         await self._reset_group_silence_timer(normalized_session_id)
 
-        # 清理计数与任务标记
+        # 清理计数与任务标记：用户发言后将未回复计数归零
         async with self.data_lock:
             if normalized_session_id in self.session_data:
                 current_unanswered = self.session_data[normalized_session_id].get(
@@ -245,9 +256,10 @@ class EventsMixin:
                         f"[主动消息] {self._get_session_log_str(normalized_session_id, session_config)} 的用户已回复， 未回复计数器已重置喵。"
                     )
 
-                if "group" in normalized_session_id.lower() and "next_trigger_time" in self.session_data[
-                    normalized_session_id
-                ]:
+                if (
+                    "group" in normalized_session_id.lower()
+                    and "next_trigger_time" in self.session_data[normalized_session_id]
+                ):
                     del self.session_data[normalized_session_id]["next_trigger_time"]
 
     @filter.after_message_sent()
@@ -279,7 +291,9 @@ class EventsMixin:
         async with self.data_lock:
             if normalized_session_id != session_id and session_id in self.session_data:
                 existing_payload = self.session_data.get(session_id, {})
-                self.session_data.setdefault(normalized_session_id, {}).update(existing_payload)
+                self.session_data.setdefault(normalized_session_id, {}).update(
+                    existing_payload
+                )
                 del self.session_data[session_id]
 
             if (
@@ -289,6 +303,7 @@ class EventsMixin:
                 del self.session_data[normalized_session_id]["next_trigger_time"]
                 await self._save_data_internal()
 
+        # 周期性清理临时状态，避免 session_temp_state 长期膨胀
         current_time = time.time()
         self._cleanup_counter += 1
 
