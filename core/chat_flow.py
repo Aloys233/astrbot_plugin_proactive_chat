@@ -26,6 +26,7 @@ class ProactiveCoreMixin:
     async def _is_chat_allowed(self, session_id: str) -> bool:
         """检查是否允许进行主动聊天（条件检查）。"""
         session_config = self._get_session_config(session_id)
+        # 会话未配置或已禁用时，直接阻止本轮主动消息
         if not session_config or not session_config.get("enable", False):
             return False
 
@@ -64,6 +65,7 @@ class ProactiveCoreMixin:
 
         async with self.data_lock:
             # 更新未回复计数器
+            # 每次主动发送成功后，未回复次数 +1
             new_unanswered_count = unanswered_count + 1
             self.session_data.setdefault(session_id, {})["unanswered_count"] = (
                 new_unanswered_count
@@ -73,7 +75,11 @@ class ProactiveCoreMixin:
             )
 
             # 私聊任务：继续调度下一次
-            if "friend" in session_id.lower() or "friendmessage" in session_id.lower():
+            parsed = self._parse_session_id(session_id)
+            is_private_session = parsed and (
+                "Friend" in parsed[1] or "Private" in parsed[1]
+            )
+            if is_private_session:
                 session_config = self._get_session_config(session_id)
                 if not session_config:
                     return
@@ -84,6 +90,7 @@ class ProactiveCoreMixin:
                     min_interval,
                     int(schedule_conf.get("max_interval_minutes", 900)) * 60,
                 )
+                # 私聊采用配置区间内随机间隔，减少触发规律性
                 random_interval = random.randint(min_interval, max_interval)
                 next_trigger_time = time.time() + random_interval
                 run_date = datetime.fromtimestamp(next_trigger_time, tz=self.timezone)
@@ -147,9 +154,11 @@ class ProactiveCoreMixin:
             conv_id = request_package["conv_id"]
             history_messages = request_package["history"]
             system_prompt = request_package["system_prompt"]
+            # 可能使用规范化后的会话 ID（由上下文准备阶段返回）
             session_id = request_package.get("session_id", session_id)
 
             # 记录任务开始状态快照
+            # 用于检测 LLM 生成窗口内是否出现用户新消息
             task_start_state = {
                 "last_message_time": self.last_message_times.get(session_id, 0),
                 "unanswered_count": unanswered_count,
@@ -176,9 +185,12 @@ class ProactiveCoreMixin:
                 ),
             }
 
+            # 任一条件命中都代表“用户已有新动作”，本次生成结果需丢弃
             has_new_message = (
-                current_state["last_message_time"] > task_start_state["last_message_time"]
-                or current_state["unanswered_count"] < task_start_state["unanswered_count"]
+                current_state["last_message_time"]
+                > task_start_state["last_message_time"]
+                or current_state["unanswered_count"]
+                < task_start_state["unanswered_count"]
             )
 
             if has_new_message:
@@ -198,23 +210,16 @@ class ProactiveCoreMixin:
                 unanswered_count,
             )
 
-            # 群聊任务清理 next_trigger_time，私聊保留
-            if "group" in session_id.lower():
+            # 群聊由沉默倒计时驱动，不依赖持久化 next_trigger_time，故在此清理
+            parsed = self._parse_session_id(session_id)
+            is_group_session = parsed and ("Group" in parsed[1] or "Guild" in parsed[1])
+            if is_group_session:
                 async with self.data_lock:
                     if (
                         session_id in self.session_data
                         and "next_trigger_time" in self.session_data[session_id]
                     ):
                         del self.session_data[session_id]["next_trigger_time"]
-                        await self._save_data_internal()
-            else:
-                async with self.data_lock:
-                    if session_id in self.session_data:
-                        self.session_data[session_id]["unanswered_count"] = (
-                            self.session_data[session_id].get("unanswered_count", 0)
-                        )
-                        if "next_trigger_time" not in self.session_data[session_id]:
-                            self.session_data[session_id]["next_trigger_time"] = None
                         await self._save_data_internal()
 
         except Exception as e:
@@ -225,7 +230,7 @@ class ProactiveCoreMixin:
             logger.error(f"[主动消息] 错误类型喵: {error_type}")
             logger.error(f"[主动消息] 错误信息喵: {error_msg}")
 
-            # 清理失败任务的持久化数据
+            # 清理失败任务的持久化调度痕迹，避免下次启动误恢复
             try:
                 async with self.data_lock:
                     if (
@@ -237,7 +242,7 @@ class ProactiveCoreMixin:
             except Exception as clean_e:
                 logger.debug(f"[主动消息] 清理失败任务数据时出错喵: {clean_e}")
 
-            # 尝试重新调度
+            # 尝试补偿性重调度，尽量维持会话后续触发能力
             try:
                 logger.info(
                     f"[主动消息] 尝试重新调度 {self._get_session_log_str(session_id)} 的主动消息任务喵。"
