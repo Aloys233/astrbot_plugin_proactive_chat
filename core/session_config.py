@@ -60,39 +60,46 @@ class ConfigMixin:
             return None
 
         _, message_type, target_id = parsed
-        # 根据消息类型路由到不同配置区块
+        # 根据消息类型路由到不同配置区块（私聊/群聊）
+        # FriendMessage / PrivateMessage 均归为私聊配置
         if "Friend" in message_type:
-            return self._get_friend_session_config(session_id, target_id)
+            return self._get_typed_session_config(
+                session_id, target_id, "friend_settings", "friend"
+            )
+        # GroupMessage / GuildMessage 均归为群聊配置
         if "Group" in message_type:
-            return self._get_group_session_config(session_id, target_id)
+            return self._get_typed_session_config(
+                session_id, target_id, "group_settings", "group"
+            )
         return None
 
-    def _get_friend_session_config(self, session_id: str, target_id: str) -> dict | None:
-        # 私聊配置仅在 enable 且命中 session_list 时生效
-        friend_settings = self.config.get("friend_settings", {})
-        if not friend_settings.get("enable", False):
+    def _get_typed_session_config(
+        self, session_id: str, target_id: str, settings_key: str, session_type: str
+    ) -> dict | None:
+        # 配置仅在 enable 且命中 session_list 时生效
+        settings = self.config.get(settings_key, {})
+        if not settings.get("enable", False):
             return None
 
-        session_list = friend_settings.get("session_list", [])
+        # 命中规则：支持完整 UMO 或纯 target_id 两种写法
+        session_list = settings.get("session_list", [])
         if session_id in session_list or target_id in session_list:
-            config_copy = friend_settings.copy()
-            config_copy["_session_type"] = "friend"
+            # 返回副本，避免调用方意外修改全局配置对象
+            config_copy = settings.copy()
+            config_copy["_session_type"] = session_type
             config_copy["_from_session_list"] = True
             return config_copy
 
         return None
+
+    def _get_friend_session_config(
+        self, session_id: str, target_id: str
+    ) -> dict | None:
+        return self._get_typed_session_config(
+            session_id, target_id, "friend_settings", "friend"
+        )
 
     def _get_group_session_config(self, session_id: str, target_id: str) -> dict | None:
-        # 群聊配置仅在 enable 且命中 session_list 时生效
-        group_settings = self.config.get("group_settings", {})
-        if not group_settings.get("enable", False):
-            return None
-
-        session_list = group_settings.get("session_list", [])
-        if session_id in session_list or target_id in session_list:
-            config_copy = group_settings.copy()
-            config_copy["_session_type"] = "group"
-            config_copy["_from_session_list"] = True
-            return config_copy
-
-        return None
+        return self._get_typed_session_config(
+            session_id, target_id, "group_settings", "group"
+        )
