@@ -456,6 +456,14 @@ function StatusView({ onRefresh }) {
                                     实时展示自动触发检测与群沉默检测的倒计时、进度和会话状态。此处卡片的倒计时结束后会进入任务管理页面
                                 </Typography>
                             </div>
+                            <div className="status-timers-summary-pills" aria-hidden="true">
+                                {timerSections.map((section) => (
+                                    <div className="status-timers-summary-pill" key={`summary-${section.key}`}>
+                                        <span className="status-timers-summary-pill-label">{section.title}</span>
+                                        <span className="status-timers-summary-pill-count">{section.cards.length}</span>
+                                    </div>
+                                ))}
+                            </div>
                         </Box>
 
                         {timerCards.length === 0 ? (
@@ -471,7 +479,7 @@ function StatusView({ onRefresh }) {
                                 {timerSections.map((section) => (
                                     <div className="status-timer-section-block" key={section.key}>
                                         <div className="status-timer-section-head">
-                                            <div>
+                                            <div className="status-timer-section-head-main">
                                                 <Typography variant="subtitle1" className="status-timer-section-title">
                                                     {section.title}
                                                 </Typography>
@@ -482,23 +490,25 @@ function StatusView({ onRefresh }) {
                                             <div className="status-timer-section-count">{section.cards.length} 张</div>
                                         </div>
 
-                                        {section.cards.length === 0 ? (
-                                            <div className="status-timer-section-empty">
-                                                {section.emptyText}
-                                            </div>
-                                        ) : (
-                                            <div className="status-timers-grid">
-                                                {section.cards.map((timer) => (
-                                                    <StatusTimerCard
-                                                        key={`${timer.timer_kind}-${timer.session_id}`}
-                                                        timer={timer}
-                                                        displayTimezone={displayTimezone}
-                                                        nowMs={nowMs}
-                                                        resetHint={Boolean(resetHintMap[`${timer.timer_kind}-${timer.session_id}`])}
-                                                    />
-                                                ))}
-                                            </div>
-                                        )}
+                                        <div className="status-timer-section-body">
+                                            {section.cards.length === 0 ? (
+                                                <div className="status-timer-section-empty">
+                                                    {section.emptyText}
+                                                </div>
+                                            ) : (
+                                                <div className="status-timers-grid">
+                                                    {section.cards.map((timer) => (
+                                                        <StatusTimerCard
+                                                            key={`${timer.timer_kind}-${timer.session_id}`}
+                                                            timer={timer}
+                                                            displayTimezone={displayTimezone}
+                                                            nowMs={nowMs}
+                                                            resetHint={Boolean(resetHintMap[`${timer.timer_kind}-${timer.session_id}`])}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
