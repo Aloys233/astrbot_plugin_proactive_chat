@@ -16,13 +16,17 @@
     --md-sys-color-on-surface: #1C1B1F;
     --md-sys-color-on-surface-variant: #49454F;
     --md-sys-color-surface-variant: #E7E0EC;
-    
+
     --md-sys-color-background: #FEF7FF;
     --md-sys-color-outline-variant: rgba(103, 80, 164, 0.1);
-    
+
     --glass-bg: rgba(255, 255, 255, 0.65);
     --glass-border: rgba(103, 80, 164, 0.15);
     --glass-shadow: 0 4px 20px 0 rgba(103, 80, 164, 0.08);
+
+    --theme-transition-duration: 220ms;
+    --interactive-transition-duration: 180ms;
+    --theme-transition-easing: cubic-bezier(0.4, 0, 0.2, 1);
 
     /* --- 形状 --- */
     --radius-sm: 8px;
@@ -82,15 +86,49 @@ html.theme-dark body {
     padding: 0;
 }
 
-/* 统一过渡效果，确保主题切换时各区域动画一致 */
-body, .app, .sidebar, .main-content, .card, .btn, .nav-item, .config-card, .config-header,
-.top-bar, .modal-container, input, select, textarea, button, .MuiPaper-root, .MuiAccordion-root,
-.MuiAccordionSummary-root, .MuiAccordionDetails-root {
-    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* 仅在主题切换瞬间开启统一过渡，避免常驻 transition 拖慢滚动与重绘 */
+html.theme-transitioning body,
+html.theme-transitioning .app,
+html.theme-transitioning .sidebar,
+html.theme-transitioning .main-content,
+html.theme-transitioning .card,
+html.theme-transitioning .config-card,
+html.theme-transitioning .config-header,
+html.theme-transitioning .top-bar::before,
+html.theme-transitioning .nav-item,
+html.theme-transitioning .btn,
+html.theme-transitioning .btn-action,
+html.theme-transitioning .sidebar-action-btn,
+html.theme-transitioning .sidebar-github-inner,
+html.theme-transitioning .header-clock-chip,
+html.theme-transitioning .connection-chip,
+html.theme-transitioning .status-timers-summary-pill,
+html.theme-transitioning .status-timer-section-block,
+html.theme-transitioning .status-timer-panel,
+html.theme-transitioning .status-timer-info-item,
+html.theme-transitioning .task-next-run-panel,
+html.theme-transitioning input,
+html.theme-transitioning select,
+html.theme-transitioning textarea,
+html.theme-transitioning button,
+html.theme-transitioning .MuiPaper-root,
+html.theme-transitioning .MuiAccordion-root,
+html.theme-transitioning .MuiAccordionSummary-root,
+html.theme-transitioning .MuiAccordionDetails-root,
+html.theme-transitioning .MuiTypography-root,
+html.theme-transitioning .MuiChip-root,
+html.theme-transitioning .MuiButton-root,
+html.theme-transitioning .MuiOutlinedInput-root,
+html.theme-transitioning .MuiInputBase-input,
+html.theme-transitioning .MuiSvgIcon-root {
+    transition:
+        background-color var(--theme-transition-duration) var(--theme-transition-easing),
+        color var(--theme-transition-duration) var(--theme-transition-easing),
+        border-color var(--theme-transition-duration) var(--theme-transition-easing),
+        fill var(--theme-transition-duration) var(--theme-transition-easing),
+        stroke var(--theme-transition-duration) var(--theme-transition-easing);
 }
+
 
 /* 移动端触摸优化 */
 html {
@@ -324,7 +362,11 @@ body.dark-theme .boot-loader__progress-bar {
     align-items: center;
     gap: 16px;
     cursor: pointer;
-    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+        background-color var(--interactive-transition-duration) var(--theme-transition-easing),
+        color var(--interactive-transition-duration) var(--theme-transition-easing),
+        opacity var(--interactive-transition-duration) var(--theme-transition-easing),
+        transform var(--interactive-transition-duration) var(--theme-transition-easing);
     color: var(--md-sys-color-on-surface);
     opacity: 0.8;
     margin-bottom: 4px;
@@ -418,7 +460,12 @@ body.dark-theme .top-bar::before {
     padding: 24px;
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+        background-color var(--theme-transition-duration) var(--theme-transition-easing),
+        border-color var(--theme-transition-duration) var(--theme-transition-easing),
+        color var(--theme-transition-duration) var(--theme-transition-easing),
+        box-shadow var(--interactive-transition-duration) var(--theme-transition-easing),
+        transform var(--interactive-transition-duration) var(--theme-transition-easing);
 }
 
 /* 为主要业务卡片提供统一的入场动画，减少页面首次渲染时的生硬感。 */
@@ -515,7 +562,13 @@ body.dark-theme .config-header {
     border: none;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition:
+        background-color var(--interactive-transition-duration) var(--theme-transition-easing),
+        border-color var(--interactive-transition-duration) var(--theme-transition-easing),
+        color var(--interactive-transition-duration) var(--theme-transition-easing),
+        transform var(--interactive-transition-duration) var(--theme-transition-easing),
+        box-shadow var(--interactive-transition-duration) var(--theme-transition-easing),
+        opacity var(--interactive-transition-duration) var(--theme-transition-easing);
 }
 
 .btn-primary {
@@ -540,7 +593,13 @@ body.dark-theme .config-header {
     gap: 12px;
     font-weight: 600;
     border: 1px solid transparent;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+        background-color var(--interactive-transition-duration) var(--theme-transition-easing),
+        color var(--interactive-transition-duration) var(--theme-transition-easing),
+        border-color var(--interactive-transition-duration) var(--theme-transition-easing),
+        transform var(--interactive-transition-duration) var(--theme-transition-easing),
+        box-shadow var(--interactive-transition-duration) var(--theme-transition-easing),
+        opacity var(--interactive-transition-duration) var(--theme-transition-easing);
     padding: 12px 16px;
     line-height: 1.5;
     cursor: pointer;
@@ -608,7 +667,7 @@ body.dark-theme .btn-action:hover {
 .nav-item:active,
 .btn:active {
     opacity: 0.7;
-    transition: opacity 0.1s;
+    transition: opacity 0.12s var(--theme-transition-easing);
 }
 
 /* 兼容之前的组件辅助样式 */
@@ -742,6 +801,11 @@ body.dark-theme .sidebar-action-btn:hover {
 
 .sidebar-github-card {
     display: block;
+    color: var(--md-sys-color-on-surface);
+}
+
+body.dark-theme .sidebar-github-card {
+    color: var(--md-sys-color-on-surface);
 }
 
 .sidebar-github-inner {
@@ -751,7 +815,11 @@ body.dark-theme .sidebar-action-btn:hover {
     padding: 12px;
     background: rgba(0, 0, 0, 0.03);
     border-radius: 12px;
-    transition: all 0.2s ease;
+    transition:
+        background-color var(--interactive-transition-duration) var(--theme-transition-easing),
+        border-color var(--interactive-transition-duration) var(--theme-transition-easing),
+        transform var(--interactive-transition-duration) var(--theme-transition-easing),
+        box-shadow var(--interactive-transition-duration) var(--theme-transition-easing);
     border: 1px solid rgba(0, 0, 0, 0.06);
     cursor: pointer;
 }
@@ -939,13 +1007,66 @@ body.dark-theme .status-action-tooltip-bubble::after {
     display: flex;
     flex-direction: column;
     gap: 18px;
+    padding: 20px;
+    border-radius: calc(var(--radius-lg) + 2px);
+    border: 1px solid var(--glass-border);
+    background:
+        linear-gradient(180deg, rgba(103, 80, 164, 0.05), rgba(103, 80, 164, 0) 34%),
+        rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+body.dark-theme .status-timers-section {
+    background:
+        linear-gradient(180deg, rgba(208, 188, 255, 0.08), rgba(208, 188, 255, 0) 34%),
+        rgba(20, 18, 24, 0.36);
+    border-color: rgba(208, 188, 255, 0.12);
 }
 
 .status-timers-header-row {
     display: flex;
     justify-content: space-between;
+    align-items: flex-start;
+    gap: 18px;
+    padding-bottom: 4px;
+}
+
+.status-timers-summary-pills {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.status-timers-summary-pill {
+    display: inline-flex;
     align-items: center;
-    gap: 16px;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--glass-border);
+    background: var(--md-sys-color-surface-variant);
+    color: var(--md-sys-color-on-surface-variant);
+}
+
+.status-timers-summary-pill-label {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.status-timers-summary-pill-count {
+    min-width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 6px;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--md-sys-color-on-primary-container);
+    background: var(--md-sys-color-primary-container);
 }
 
 .status-timer-sections {
@@ -958,6 +1079,15 @@ body.dark-theme .status-action-tooltip-bubble::after {
     display: flex;
     flex-direction: column;
     gap: 14px;
+    padding: 16px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.34);
+    border: 1px solid rgba(103, 80, 164, 0.12);
+}
+
+body.dark-theme .status-timer-section-block {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(208, 188, 255, 0.14);
 }
 
 .status-timer-section-head {
@@ -965,6 +1095,16 @@ body.dark-theme .status-action-tooltip-bubble::after {
     align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed rgba(103, 80, 164, 0.14);
+}
+
+body.dark-theme .status-timer-section-head {
+    border-bottom-color: rgba(208, 188, 255, 0.16);
+}
+
+.status-timer-section-head-main {
+    min-width: 0;
 }
 
 .status-timer-section-title {
@@ -985,6 +1125,10 @@ body.dark-theme .status-action-tooltip-bubble::after {
     color: var(--md-sys-color-primary);
     font-size: 12px;
     font-weight: 800;
+}
+
+.status-timer-section-body {
+    padding-top: 2px;
 }
 
 .status-timer-section-empty {
@@ -1096,8 +1240,9 @@ body.dark-theme .status-action-tooltip-bubble::after {
     display: block !important;
     max-width: 100%;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    word-break: normal;
+    overflow: visible;
+    text-overflow: clip;
     opacity: 0.72;
     font-size: 12px !important;
 }
@@ -1459,7 +1604,7 @@ body.dark-theme .status-timer-info-item {
     height: 100%;
     border-radius: inherit;
     background: linear-gradient(90deg, #6750A4, #8B5CF6);
-    transition: width 0.6s ease;
+    transition: width var(--theme-transition-duration) var(--theme-transition-easing);
 }
 
 .task-progress-bar.is-soon {
@@ -1475,7 +1620,38 @@ body.dark-theme .status-timer-info-item {
     background: linear-gradient(90deg, #EF4444, #F87171);
 }
 
-/* ===== 响应式断点设计 ===== */
+
+body.dark-theme .sidebar-github-author {
+    color: var(--md-sys-color-on-surface) !important;
+}
+
+body.dark-theme .sidebar-github-meta {
+    color: var(--md-sys-color-on-surface-variant) !important;
+    opacity: 0.9;
+}
+
+body.dark-theme .status-metric-label,
+body.dark-theme .status-timer-section-desc,
+body.dark-theme .status-timer-kicker,
+body.dark-theme .status-timer-session-sub,
+body.dark-theme .task-card-kicker,
+body.dark-theme .task-card-session-sub,
+body.dark-theme .task-next-run-label,
+body.dark-theme .status-timer-label,
+body.dark-theme .status-timer-info-label,
+body.dark-theme .tasks-header-subtitle,
+body.dark-theme .task-countdown-text {
+    color: var(--md-sys-color-on-surface-variant);
+    opacity: 0.95;
+}
+
+body.dark-theme .status-timer-section-count,
+body.dark-theme .status-timers-summary-pill,
+body.dark-theme .header-clock-chip,
+body.dark-theme .connection-chip {
+    color: var(--md-sys-color-on-surface);
+}
+
 /* ========== 响应式设计 ========== */
 
 /* 平板设备：缩窄侧边栏、把 12 栏压缩为 6 栏，兼顾内容密度与可读性。 */
