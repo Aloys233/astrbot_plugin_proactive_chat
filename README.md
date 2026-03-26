@@ -295,6 +295,7 @@ AstrBot/
          │  └─ time_utils.py                  # 通用时间工具函数
          │
          ├─ _conf_schema.json                 # 配置文件结构定义
+         ├─ .gitattributes                    # Git 行尾策略
          ├─ CHANGELOG.md                      # 插件更新日志，适用于 AstrBot v4.11.2+
          ├─ CONTRIBUTING.md                   # 贡献指南
          ├─ LICENSE                           # 许可证文件
