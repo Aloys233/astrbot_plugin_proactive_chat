@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import copy
 import json
 from pathlib import Path
@@ -58,7 +59,6 @@ class SessionOverrideManager:
 
     async def _save(self) -> None:
         """异步保存会话差异配置到磁盘，避免阻塞事件循环。"""
-        import asyncio
 
         self._ensure_storage_dir()
         temp_file = self.overrides_file.with_suffix(self.overrides_file.suffix + ".tmp")
