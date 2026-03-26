@@ -84,10 +84,10 @@ function resolveStatusTimerCard(timer, nowMs, displayTimezone) {
         statusLabel = '待刷新';
     } else if (remainingSeconds <= 300) {
         status = 'urgent';
-        statusLabel = '即将触发';
+        statusLabel = '即将结束';
     } else if (remainingSeconds <= 1800) {
         status = 'soon';
-        statusLabel = '等待触发';
+        statusLabel = '正常计时';
     }
 
     const isGroupSession = timer.session_category === 'group';
