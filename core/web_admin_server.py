@@ -5,7 +5,10 @@ from __future__ import annotations
 import asyncio
 import json
 import math
+import os
 import secrets
+import subprocess
+import sys
 import time
 from datetime import datetime
 from pathlib import Path
@@ -28,6 +31,23 @@ except ImportError:
     logger.warning(
         "[主动消息] FastAPI 未安装，Web 管理端不可用。请安装: pip install fastapi uvicorn"
     )
+
+
+def _is_running_in_docker() -> bool:
+    """检测当前进程是否运行在 Docker / 容器环境中。"""
+    if os.path.exists("/.dockerenv"):
+        return True
+
+    try:
+        cgroup_path = Path("/proc/self/cgroup")
+        if cgroup_path.exists():
+            content = cgroup_path.read_text(encoding="utf-8", errors="ignore")
+            if "/docker/" in content or "/kubepods/" in content:
+                return True
+    except Exception:
+        pass
+
+    return os.environ.get("DOCKER_CONTAINER") == "true"
 
 
 class WebAdminServer:
@@ -64,10 +84,15 @@ class WebAdminServer:
             description="主动消息插件独立 WebUI",
         )
 
-        # 管理端通常运行在本地独立端口，这里放开跨域限制以降低接入门槛。
+        # 管理端通常运行在本地独立端口；在允许凭据时使用显式本地来源列表，避免 "*" 带来的安全/兼容问题。
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=["*"],
+            allow_origins=[
+                "http://localhost:4100",
+                "http://127.0.0.1:4100",
+                "http://localhost",
+                "http://127.0.0.1",
+            ],
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
@@ -176,8 +201,10 @@ class WebAdminServer:
             schema_path = Path(__file__).resolve().parent.parent / "_conf_schema.json"
             if schema_path.exists():
                 try:
-                    with open(schema_path, encoding="utf-8") as f:
-                        return json.load(f)
+                    schema_text = await asyncio.to_thread(
+                        schema_path.read_text, encoding="utf-8"
+                    )
+                    return json.loads(schema_text)
                 except Exception as e:
                     logger.error(f"[主动消息] 读取 Schema 失败: {e}")
             return {}
@@ -327,13 +354,97 @@ class WebAdminServer:
                 directory = Path(__file__).resolve().parent.parent
 
             try:
-                # 确保目录存在，再交给 Windows 资源管理器打开。
+                # 确保目录存在，再根据当前系统选择合适的打开方式。
                 directory.mkdir(parents=True, exist_ok=True)
-                await asyncio.create_subprocess_exec("explorer", str(directory))
-                return {"ok": True, "path": str(directory)}
+                dir_str = str(directory)
+
+                if _is_running_in_docker():
+                    return JSONResponse(
+                        {
+                            "error": "Docker 环境下不支持在宿主机直接打开目录，请手动查看挂载路径",
+                            "path": dir_str,
+                        },
+                        status_code=400,
+                    )
+
+                if os.name == "nt":
+                    # Windows 使用系统默认资源管理器。
+                    os.startfile(dir_str)
+                elif sys.platform == "darwin":
+                    result = await asyncio.to_thread(
+                        subprocess.run,
+                        ["open", dir_str],
+                        check=False,
+                        capture_output=True,
+                        text=True,
+                    )
+                    if result.returncode != 0:
+                        detail = (result.stderr or result.stdout or "未知错误").strip()
+                        return JSONResponse(
+                            {
+                                "error": "打开目录失败（macOS）",
+                                "message": f"open 命令执行失败: {detail}",
+                                "path": dir_str,
+                            },
+                            status_code=500,
+                        )
+                else:
+                    result = await asyncio.to_thread(
+                        subprocess.run,
+                        ["xdg-open", dir_str],
+                        check=False,
+                        capture_output=True,
+                        text=True,
+                    )
+                    if result.returncode != 0:
+                        detail = (result.stderr or result.stdout or "未知错误").strip()
+                        return JSONResponse(
+                            {
+                                "error": "打开目录失败（Linux）",
+                                "message": (
+                                    "xdg-open 执行失败，服务器可能缺少桌面环境或未安装 xdg-open: "
+                                    f"{detail}"
+                                ),
+                                "path": dir_str,
+                            },
+                            status_code=500,
+                        )
+
+                return {
+                    "ok": True,
+                    "path": dir_str,
+                    "message": "已在系统文件管理器中打开目录",
+                }
+            except FileNotFoundError as e:
+                logger.error(f"[主动消息] 打开目录失败（命令缺失）喵: {e}")
+                return JSONResponse(
+                    {
+                        "error": "打开目录失败：系统缺少所需命令",
+                        "message": "请确认系统已安装对应文件管理器命令（如 open / xdg-open）",
+                        "path": str(directory),
+                    },
+                    status_code=500,
+                )
+            except PermissionError as e:
+                logger.error(f"[主动消息] 打开目录失败（权限不足）喵: {e}")
+                return JSONResponse(
+                    {
+                        "error": "打开目录失败：权限不足",
+                        "message": str(e),
+                        "path": str(directory),
+                    },
+                    status_code=500,
+                )
             except Exception as e:
                 logger.error(f"[主动消息] 打开目录失败喵: {e}")
-                return JSONResponse({"error": f"打开目录失败: {e}"}, status_code=500)
+                return JSONResponse(
+                    {
+                        "error": "打开目录失败",
+                        "message": str(e),
+                        "path": str(directory),
+                    },
+                    status_code=500,
+                )
 
         @self.app.post("/api/jobs/{umo:path}/trigger")
         async def trigger_job(umo: str):
@@ -773,7 +884,7 @@ class WebAdminServer:
         }
 
         to_remove: list[WebSocket] = []
-        for ws in self._ws_connections:
+        for ws in list(self._ws_connections):
             try:
                 await ws.send_json(payload)
             except Exception:

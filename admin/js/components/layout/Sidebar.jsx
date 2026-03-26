@@ -57,7 +57,16 @@ function Sidebar({ currentView, onChange }) {
             // 通过后端调用本机资源管理器打开目录，前端无需感知具体平台命令。
             const response = await window.HttpUtil.post('/api/open-directory', { path });
             if (!response || response.ok === false) {
-                throw new Error(response?.error || '打开目录失败');
+                // 读取后端可能传回来的错误描述与详细 message
+                const errorTitle = response?.error || '打开目录失败';
+                const errorMsg = response?.message ? `\n详情: ${response.message}` : '';
+                throw new Error(`${errorTitle}${errorMsg}`);
+            }
+            
+            // 可选：如果是 Docker 环境等虽然成功响应但并非打开了窗口的场景，给出提示
+            if (response.message && response.message.includes('已在系统文件管理器中打开目录')) {
+                // 正常打开，可以什么都不做，也可以给个轻提示
+                console.log(response.message);
             }
         } catch (e) {
             const message = e?.message || '打开目录失败';
