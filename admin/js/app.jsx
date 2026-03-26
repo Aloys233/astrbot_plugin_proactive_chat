@@ -5,6 +5,7 @@
 function App() {
     const { state, dispatch } = useAppContext();
     const api = useApi();
+    const themeInitializedRef = React.useRef(false);
 
     const loadAll = React.useCallback(async () => {
         // 首次进入页面或手动全量刷新时，统一拉取首页所需的全部关键数据。
@@ -114,13 +115,32 @@ function App() {
 
     React.useEffect(() => {
         // 将暗色模式类名直接挂载到 html / body，便于纯 CSS 全局变量一起切换。
+        const root = document.documentElement;
+        const body = document.body;
+
         if (state.theme === 'dark') {
-            document.documentElement.classList.add('theme-dark');
-            document.body.classList.add('dark-theme');
+            root.classList.add('theme-dark');
+            body.classList.add('dark-theme');
         } else {
-            document.documentElement.classList.remove('theme-dark');
-            document.body.classList.remove('dark-theme');
+            root.classList.remove('theme-dark');
+            body.classList.remove('dark-theme');
         }
+
+        // 首次挂载不加过渡，避免首屏闪动；后续主题切换时才短暂打开统一过渡。
+        if (!themeInitializedRef.current) {
+            themeInitializedRef.current = true;
+            return;
+        }
+
+        root.classList.add('theme-transitioning');
+        const timer = window.setTimeout(() => {
+            root.classList.remove('theme-transitioning');
+        }, 260);
+
+        return () => {
+            window.clearTimeout(timer);
+            root.classList.remove('theme-transitioning');
+        };
     }, [state.theme]);
 
     return (
@@ -142,6 +162,63 @@ function App() {
     );
 }
 
+function ThemedAppShell() {
+    const { state } = useAppContext();
+
+    const muiTheme = React.useMemo(() => {
+        const isDark = state.theme === 'dark';
+
+        return MaterialUI.createTheme({
+            palette: isDark
+                ? {
+                    mode: 'dark',
+                    primary: {
+                        main: '#D0BCFF',
+                    },
+                    secondary: {
+                        main: '#CCC2DC',
+                    },
+                    background: {
+                        default: '#141218',
+                        paper: '#1C1B1F',
+                    },
+                    text: {
+                        primary: '#E6E1E5',
+                        secondary: '#CAC4D0',
+                    },
+                    divider: 'rgba(208, 188, 255, 0.16)',
+                }
+                : {
+                    mode: 'light',
+                    primary: {
+                        main: '#6750A4',
+                    },
+                    secondary: {
+                        main: '#625B71',
+                    },
+                    background: {
+                        default: '#FEF7FF',
+                        paper: '#FFFFFF',
+                    },
+                    text: {
+                        primary: '#1C1B1F',
+                        secondary: '#49454F',
+                    },
+                    divider: 'rgba(103, 80, 164, 0.16)',
+                },
+            typography: {
+                fontFamily: '"Roboto", "Noto Sans SC", "Helvetica", "Arial", sans-serif',
+            }
+        });
+    }, [state.theme]);
+
+    return (
+        <MaterialUI.ThemeProvider theme={muiTheme}>
+            <App />
+        </MaterialUI.ThemeProvider>
+    );
+}
+
 function AuthWrapper() {
     // ready 初值根据启动页鉴权状态决定，避免无鉴权场景下多等一次事件。
     const [ready, setReady] = React.useState(() => !window.__PROACTIVE_AUTH_PENDING);
@@ -158,22 +235,7 @@ function AuthWrapper() {
 
     return (
         <AppProvider>
-            <MaterialUI.ThemeProvider theme={MaterialUI.createTheme({
-                // 管理端主题在运行时创建，统一集中在入口文件维护。
-                palette: {
-                    primary: {
-                        main: '#6750A4',
-                    },
-                    secondary: {
-                        main: '#625B71',
-                    },
-                },
-                typography: {
-                    fontFamily: '"Roboto", "Noto Sans SC", "Helvetica", "Arial", sans-serif',
-                }
-            })}>
-                <App />
-            </MaterialUI.ThemeProvider>
+            <ThemedAppShell />
         </AppProvider>
     );
 }
