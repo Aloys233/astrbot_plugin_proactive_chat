@@ -6,6 +6,8 @@ function App() {
     const { state, dispatch } = useAppContext();
     const api = useApi();
     const themeInitializedRef = React.useRef(false);
+    const mainContentRef = React.useRef(null);
+    const isRestoringRef = React.useRef(false);
 
     const loadAll = React.useCallback(async () => {
         // 首次进入页面或手动全量刷新时，统一拉取首页所需的全部关键数据。
@@ -99,6 +101,82 @@ function App() {
         if (boot) boot.style.display = 'none';
     }, [state.status]);
 
+    // 切换主视图时恢复对应滚动位置。
+    React.useLayoutEffect(() => {
+        const el = mainContentRef.current;
+        if (!el) return;
+
+        const key = `astrbot_scroll_${state.currentView}`;
+        const savedPos = parseInt(localStorage.getItem(key) || '0', 10);
+
+        if (savedPos > 0) {
+            isRestoringRef.current = true;
+            const applyRestore = () => {
+                if (!mainContentRef.current) return;
+                const maxScrollTop = Math.max(mainContentRef.current.scrollHeight - mainContentRef.current.clientHeight, 0);
+                mainContentRef.current.scrollTop = Math.min(savedPos, maxScrollTop);
+            };
+
+            applyRestore();
+            requestAnimationFrame(() => {
+                if (!isRestoringRef.current) return;
+                applyRestore();
+            });
+
+            const timer = window.setTimeout(() => {
+                isRestoringRef.current = false;
+            }, 320);
+
+            return () => {
+                window.clearTimeout(timer);
+                isRestoringRef.current = false;
+            };
+        }
+
+        el.scrollTop = 0;
+        isRestoringRef.current = false;
+    }, [state.currentView]);
+
+    // 记录主内容区滚动位置，并在用户主动交互时终止恢复锁。
+    React.useEffect(() => {
+        const el = mainContentRef.current;
+        if (!el) return;
+
+        const stopRestoring = () => {
+            isRestoringRef.current = false;
+        };
+
+        let timeout = 0;
+        const handleScroll = () => {
+            if (isRestoringRef.current) {
+                const key = `astrbot_scroll_${state.currentView}`;
+                const savedPos = parseInt(localStorage.getItem(key) || '0', 10);
+                if (savedPos > 0 && Math.abs(el.scrollTop - savedPos) > 100) {
+                    isRestoringRef.current = false;
+                }
+            }
+
+            window.clearTimeout(timeout);
+            timeout = window.setTimeout(() => {
+                const key = `astrbot_scroll_${state.currentView}`;
+                localStorage.setItem(key, String(el.scrollTop));
+            }, 120);
+        };
+
+        el.addEventListener('scroll', handleScroll);
+        el.addEventListener('wheel', stopRestoring, { passive: true });
+        el.addEventListener('touchstart', stopRestoring, { passive: true });
+        el.addEventListener('mousedown', stopRestoring);
+
+        return () => {
+            el.removeEventListener('scroll', handleScroll);
+            el.removeEventListener('wheel', stopRestoring);
+            el.removeEventListener('touchstart', stopRestoring);
+            el.removeEventListener('mousedown', stopRestoring);
+            window.clearTimeout(timeout);
+        };
+    }, [state.currentView]);
+
     const renderView = () => {
         // 当前仅暴露三个主视图；未识别视图时回退到状态页，避免出现空白主区域。
         switch (state.currentView) {
@@ -152,7 +230,7 @@ function App() {
             />
             <div className="main-wrapper">
                 <Header currentView={state.currentView} />
-                <div className="main-content">
+                <div className="main-content" ref={mainContentRef}>
                     {/* 顶部错误条统一展示最近一次加载 / 操作失败的消息。 */}
                     {state.error ? <div className="card" style={{marginBottom: 16, color: '#B3261E', background: 'rgba(179, 38, 30, 0.08)'}}>错误：{state.error}</div> : null}
                     {renderView()}
