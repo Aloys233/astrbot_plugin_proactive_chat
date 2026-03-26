@@ -64,6 +64,8 @@ class WebAdminServer:
         self.server = None
         # 后台运行的 serve 任务，stop 时需要等待其退出。
         self.server_task: asyncio.Task | None = None
+        # 定时清理过期 token 的后台任务。
+        self._token_cleanup_task: asyncio.Task | None = None
         # 当前已建立的 WebSocket 连接列表，用于广播 UI 更新。
         self._ws_connections: list[WebSocket] = []
         # 登录令牌默认有效期 24 小时。
@@ -294,7 +296,9 @@ class WebAdminServer:
                     return JSONResponse(
                         {"error": "override 必须是对象"}, status_code=400
                     )
-                self.plugin.session_override_manager.set_override(normalized, override)
+                await self.plugin.session_override_manager.set_override(
+                    normalized, override
+                )
             else:
                 effective = payload.get("effective", {})
                 if not isinstance(effective, dict):
@@ -310,10 +314,12 @@ class WebAdminServer:
                         },
                         status_code=400,
                     )
-                self.plugin.session_override_manager.update_session_from_effective(
-                    normalized,
-                    base,
-                    effective,
+                await (
+                    self.plugin.session_override_manager.update_session_from_effective(
+                        normalized,
+                        base,
+                        effective,
+                    )
                 )
 
             await self._broadcast_update("session-config")
@@ -330,7 +336,7 @@ class WebAdminServer:
         async def reset_session_config(umo: str):
             # 删除覆写后，会话会重新完全继承全局配置。
             normalized = self.plugin._normalize_session_id(umo)
-            self.plugin.session_override_manager.delete_override(normalized)
+            await self.plugin.session_override_manager.delete_override(normalized)
             await self._broadcast_update("session-config")
             return {
                 "ok": True,
@@ -368,8 +374,8 @@ class WebAdminServer:
                     )
 
                 if os.name == "nt":
-                    # Windows 使用系统默认资源管理器。
-                    os.startfile(dir_str)
+                    # Windows 使用系统默认资源管理器，封装为异步避免阻塞事件循环。
+                    await asyncio.to_thread(os.startfile, dir_str)
                 elif sys.platform == "darwin":
                     result = await asyncio.to_thread(
                         subprocess.run,
@@ -925,11 +931,32 @@ class WebAdminServer:
                 logger.error(f"[主动消息] Web 管理端运行异常喵: {e}")
 
         self.server_task = asyncio.create_task(_serve())
+
+        async def _cleanup_tokens_loop():
+            while True:
+                try:
+                    await asyncio.sleep(3600)  # 每小时清理一次
+                    now = time.time()
+                    expired = [k for k, v in self._tokens.items() if now > v]
+                    for k in expired:
+                        self._tokens.pop(k, None)
+                    if expired:
+                        logger.debug(f"[主动消息] 已清理 {len(expired)} 个过期令牌。")
+                except asyncio.CancelledError:
+                    break
+                except Exception as e:
+                    logger.debug(f"[主动消息] 清理过期令牌异常: {e}")
+
+        if self._auth_enabled:
+            self._token_cleanup_task = asyncio.create_task(_cleanup_tokens_loop())
+
         # 略等一个事件循环切片，让服务有机会完成绑定后再打印启动日志。
         await asyncio.sleep(0.1)
         logger.info(f"[主动消息] Web 管理端已启动喵: http://{host}:{port}")
 
     async def stop(self) -> None:
+        if self._token_cleanup_task:
+            self._token_cleanup_task.cancel()
         if self.server:
             # 通知 Uvicorn 进入优雅退出流程。
             self.server.should_exit = True
