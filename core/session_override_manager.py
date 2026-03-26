@@ -56,13 +56,22 @@ class SessionOverrideManager:
             logger.warning(f"[主动消息] 读取会话差异配置失败喵，将使用空配置: {e}")
             self._overrides = {}
 
-    def _save(self) -> None:
+    async def _save(self) -> None:
+        """异步保存会话差异配置到磁盘，避免阻塞事件循环。"""
+        import asyncio
+
         self._ensure_storage_dir()
         temp_file = self.overrides_file.with_suffix(self.overrides_file.suffix + ".tmp")
-        try:
+        # 由于这里是在类内多次修改同一份字典，安全起见先做一次深拷贝防止序列化期间被并发修改
+        snap_overrides = copy.deepcopy(self._overrides)
+
+        def _do_write():
             with temp_file.open("w", encoding="utf-8") as f:
-                json.dump(self._overrides, f, ensure_ascii=False, indent=2)
+                json.dump(snap_overrides, f, ensure_ascii=False, indent=2)
             temp_file.replace(self.overrides_file)
+
+        try:
+            await asyncio.to_thread(_do_write)
         except Exception as e:
             logger.error(f"[主动消息] 保存会话差异配置失败喵: {e}")
             try:
@@ -77,7 +86,9 @@ class SessionOverrideManager:
     def get_override(self, session_id: str) -> dict[str, Any]:
         return copy.deepcopy(self._overrides.get(session_id, {}))
 
-    def set_override(self, session_id: str, override_patch: dict[str, Any]) -> None:
+    async def set_override(
+        self, session_id: str, override_patch: dict[str, Any]
+    ) -> None:
         if not isinstance(override_patch, dict):
             raise ValueError("override_patch 必须是对象")
 
@@ -87,11 +98,11 @@ class SessionOverrideManager:
         else:
             self._overrides.pop(session_id, None)
 
-        self._save()
+        await self._save()
 
-    def delete_override(self, session_id: str) -> None:
+    async def delete_override(self, session_id: str) -> None:
         self._overrides.pop(session_id, None)
-        self._save()
+        await self._save()
 
     def get_effective(
         self, session_id: str, base_config: dict[str, Any] | None
@@ -100,7 +111,7 @@ class SessionOverrideManager:
         override = self._overrides.get(session_id, {})
         return self.deep_merge(base, override)
 
-    def update_session_from_effective(
+    async def update_session_from_effective(
         self,
         session_id: str,
         base_config: dict[str, Any],
@@ -116,7 +127,7 @@ class SessionOverrideManager:
 
         patch = self.compute_diff(sanitized_base, sanitized_effective)
         patch = self._sanitize_patch(patch)
-        self.set_override(session_id, patch or {})
+        await self.set_override(session_id, patch or {})
 
     @classmethod
     def deep_merge(cls, base: Any, patch: Any) -> Any:
