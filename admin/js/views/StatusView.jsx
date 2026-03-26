@@ -270,7 +270,7 @@ function StatusView({ onRefresh }) {
         {
             key: 'auto_trigger',
             title: '自动触发计时器',
-            description: '用于检测会话是否达到自动触发条件，并按群聊 / 私聊类型显示不同标签。',
+            description: '用于观察会话的自动触发状况，并按群聊 / 私聊显示不同标签。通常情况下，插件运行一段时间后，这里将不会出现新的卡片。',
             emptyText: '当前没有正在运行的自动触发计时器。',
             cards: timerCards.filter((timer) => timer.timer_kind === 'auto_trigger'),
         },
@@ -453,7 +453,7 @@ function StatusView({ onRefresh }) {
                                     会话计时器可视化 ({timerCards.length})
                                 </Typography>
                                 <Typography variant="body2" className="tasks-header-subtitle">
-                                    实时展示自动触发检测与群沉默检测的倒计时、进度和会话状态。
+                                    实时展示自动触发检测与群沉默检测的倒计时、进度和会话状态。此处卡片的倒计时结束后会进入任务管理页面
                                 </Typography>
                             </div>
                         </Box>
