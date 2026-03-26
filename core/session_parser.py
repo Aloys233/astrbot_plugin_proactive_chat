@@ -165,7 +165,7 @@ class SessionMixin:
             return f"{preferred_platform}:{msg_type}:{target_id}"
 
         # 次选：从历史 session_data 中寻找同目标且在线的平台
-        for existing_id in getattr(self, "session_data", {}).keys():
+        for existing_id in self.session_data.keys():
             if type_keyword in existing_id and existing_id.endswith(f":{target_id}"):
                 p_id = existing_id.split(":")[0]
                 if (
