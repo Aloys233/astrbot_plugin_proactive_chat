@@ -804,10 +804,6 @@ body.dark-theme .sidebar-action-btn:hover {
     color: var(--md-sys-color-on-surface);
 }
 
-body.dark-theme .sidebar-github-card {
-    color: var(--md-sys-color-on-surface);
-}
-
 .sidebar-github-inner {
     display: flex;
     align-items: center;
@@ -1622,11 +1618,11 @@ body.dark-theme .status-timer-info-item {
 
 
 body.dark-theme .sidebar-github-author {
-    color: var(--md-sys-color-on-surface) !important;
+    color: var(--md-sys-color-on-surface);
 }
 
 body.dark-theme .sidebar-github-meta {
-    color: var(--md-sys-color-on-surface-variant) !important;
+    color: var(--md-sys-color-on-surface-variant);
     opacity: 0.9;
 }
 
