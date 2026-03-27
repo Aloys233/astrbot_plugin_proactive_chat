@@ -9,6 +9,11 @@ function App() {
     const mainContentRef = React.useRef(null);
     const isRestoringRef = React.useRef(false);
 
+    const getScrollKey = React.useCallback(
+        (view = state.currentView) => `astrbot_scroll_${view}`,
+        [state.currentView]
+    );
+
     const loadAll = React.useCallback(async () => {
         // 首次进入页面或手动全量刷新时，统一拉取首页所需的全部关键数据。
         dispatch({ type: 'SET_LOADING', payload: true });
@@ -106,7 +111,7 @@ function App() {
         const el = mainContentRef.current;
         if (!el) return;
 
-        const key = `astrbot_scroll_${state.currentView}`;
+        const key = getScrollKey();
         const savedPos = parseInt(localStorage.getItem(key) || '0', 10);
 
         if (savedPos > 0) {
@@ -149,7 +154,7 @@ function App() {
         let timeout = 0;
         const handleScroll = () => {
             if (isRestoringRef.current) {
-                const key = `astrbot_scroll_${state.currentView}`;
+                const key = getScrollKey();
                 const savedPos = parseInt(localStorage.getItem(key) || '0', 10);
                 if (savedPos > 0 && Math.abs(el.scrollTop - savedPos) > 100) {
                     isRestoringRef.current = false;
@@ -158,7 +163,7 @@ function App() {
 
             window.clearTimeout(timeout);
             timeout = window.setTimeout(() => {
-                const key = `astrbot_scroll_${state.currentView}`;
+                const key = getScrollKey();
                 localStorage.setItem(key, String(el.scrollTop));
             }, 120);
         };
@@ -175,7 +180,7 @@ function App() {
             el.removeEventListener('mousedown', stopRestoring);
             window.clearTimeout(timeout);
         };
-    }, [state.currentView]);
+    }, [getScrollKey, state.currentView]);
 
     const renderView = () => {
         // 当前仅暴露三个主视图；未识别视图时回退到状态页，避免出现空白主区域。
@@ -211,9 +216,33 @@ function App() {
         }
 
         root.classList.add('theme-transitioning');
+
+        const computedStyle = window.getComputedStyle(root);
+        const themeTransitionVar = computedStyle
+            .getPropertyValue('--theme-transition-duration')
+            .trim();
+        const interactiveTransitionVar = computedStyle
+            .getPropertyValue('--interactive-transition-duration')
+            .trim();
+
+        let themeTransitionDuration = Number.parseFloat(themeTransitionVar);
+        let interactiveTransitionDuration = Number.parseFloat(interactiveTransitionVar);
+
+        if (Number.isNaN(themeTransitionDuration)) {
+            themeTransitionDuration = 220;
+        }
+        if (Number.isNaN(interactiveTransitionDuration)) {
+            interactiveTransitionDuration = themeTransitionDuration;
+        }
+
+        const transitionDuration = Math.max(
+            themeTransitionDuration,
+            interactiveTransitionDuration
+        );
+
         const timer = window.setTimeout(() => {
             root.classList.remove('theme-transitioning');
-        }, 260);
+        }, transitionDuration);
 
         return () => {
             window.clearTimeout(timer);
