@@ -80,7 +80,7 @@ class NotificationCenter:
         # 首次启动或尚未产生缓存文件时，直接使用空缓存结构。
         try:
             await aio_os.stat(self.cache_file)
-        except OSError:
+        except FileNotFoundError:
             self._cache = {
                 "last_sync_at": None,
                 "items": [],
