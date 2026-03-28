@@ -25,7 +25,7 @@ function renderNotificationContent(item) {
         .replace(/\r\n?/g, '\n');
     const format = String(item?.content_format || 'text').trim().toLowerCase();
 
-    const markdownLike = /(^|\n)\s{0,3}(#{1,6}\s|>\s|[-*]\s)|\*\*[^*]+\*\*|(^|\n)\s*---\s*($|\n)/m.test(content);
+    const markdownLike = /(^|\n)\s{0,3}(#{1,6}\s|>\s|[-*]\s)|(^|\n)\s*---\s*($|\n)/m.test(content);
     const shouldRenderMarkdown = format === 'markdown' || markdownLike;
 
     if (!shouldRenderMarkdown) {
@@ -155,15 +155,14 @@ function renderNotificationContent(item) {
             };
 
             const rawHtml = parseMarkdown(content);
-            const cleanedHtml = DOMPurify.sanitize(rawHtml, {
+            const sanitizedFragment = DOMPurify.sanitize(rawHtml, {
                 USE_PROFILES: { html: true },
                 FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed', 'form'],
                 FORBID_ATTR: ['style', 'onerror', 'onload', 'onclick', 'onmouseover', 'onfocus'],
+                RETURN_DOM_FRAGMENT: true,
             });
 
-            const parser = new window.DOMParser();
-            const doc = parser.parseFromString(`<div>${cleanedHtml}</div>`, 'text/html');
-            doc.querySelectorAll('a[href]').forEach((link) => {
+            sanitizedFragment.querySelectorAll('a[href]').forEach((link) => {
                 const href = String(link.getAttribute('href') || '').trim();
                 if (!/^https?:\/\//i.test(href) && !href.startsWith('/') && !href.startsWith('#')) {
                     link.setAttribute('href', '#');
@@ -171,7 +170,10 @@ function renderNotificationContent(item) {
                 link.setAttribute('target', '_blank');
                 link.setAttribute('rel', 'noopener noreferrer');
             });
-            sanitizedHtml = doc.body.innerHTML;
+
+            const container = document.createElement('div');
+            container.appendChild(sanitizedFragment);
+            sanitizedHtml = container.innerHTML;
         } else {
             sanitizedHtml = fallbackRenderMarkdown(content);
         }

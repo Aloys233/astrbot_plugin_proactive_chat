@@ -55,18 +55,18 @@ class NotificationCenter:
         # 通知系统默认开启；只有用户明确关闭时才停用轮询与同步逻辑。
         return bool(settings.get("enabled", True))
 
-    def _build_remote_url(self) -> str:
+    async def _build_remote_url(self) -> str:
         # 统一在这里拼接远端接口地址，后续若路径变更，只需修改这一处。
         base_url = self.NOTIFICATION_BASE_URL.strip().rstrip("/")
         app_slug = self.NOTIFICATION_APP_SLUG.strip().strip("/")
         if not base_url or not app_slug:
             return ""
 
-        plugin_version = self._get_plugin_version()
+        plugin_version = await self._get_plugin_version()
         query = urlencode({"plugin_version": plugin_version})
         return f"{base_url}/api/v1/{app_slug}/notifications/updates?{query}"
 
-    def _get_plugin_version(self) -> str:
+    async def _get_plugin_version(self) -> str:
         # 远端通知接口要求携带插件版本；优先复用插件实例版本，缺失时回退 metadata 文件。
         plugin_version = (
             getattr(self.plugin, "version", None)
@@ -79,14 +79,18 @@ class NotificationCenter:
 
         try:
             metadata_path = Path(__file__).resolve().parent.parent / "metadata.yaml"
-            if metadata_path.exists():
-                for line in metadata_path.read_text(encoding="utf-8").splitlines():
-                    stripped = line.strip()
-                    if stripped.startswith("version:"):
-                        value = stripped.split(":", 1)[1].strip().strip('"').strip("'")
-                        normalized = value.lstrip("vV")
-                        if normalized:
-                            return normalized
+            metadata_text = await asyncio.to_thread(
+                metadata_path.read_text, encoding="utf-8"
+            )
+            for line in metadata_text.splitlines():
+                stripped = line.strip()
+                if stripped.startswith("version:"):
+                    value = stripped.split(":", 1)[1].strip().strip('"').strip("'")
+                    normalized = value.lstrip("vV")
+                    if normalized:
+                        return normalized
+        except FileNotFoundError:
+            pass
         except Exception as e:
             logger.debug(f"[主动消息] 读取插件版本失败喵: {e}")
 
@@ -218,7 +222,7 @@ class NotificationCenter:
 
     async def _fetch_remote_items(self) -> list[dict[str, Any]]:
         # 抽离单独的拉取函数，便于复用于“启动立即同步”和“手动刷新”。
-        url = self._build_remote_url()
+        url = await self._build_remote_url()
         if not url:
             return []
 
